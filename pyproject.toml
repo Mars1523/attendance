@@ -6,4 +6,5 @@ dependencies = [
     "fastapi[standard]",
     "sqlmodel",
     "starlette",
+    "itsdangerous",
 ]
