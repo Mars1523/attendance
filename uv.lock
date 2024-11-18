@@ -35,6 +35,7 @@ dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "jinja2" },
     { name = "sqlmodel" },
+    { name = "starlette" },
 ]
 
 [package.metadata]
@@ -42,6 +43,7 @@ requires-dist = [
     { name = "fastapi", extras = ["standard"] },
     { name = "jinja2" },
     { name = "sqlmodel" },
+    { name = "starlette" },
 ]
 
 [[package]]
