@@ -16,28 +16,41 @@
         <div class="container">
 
             <h1>Attendance</h1>
-            <h2>Currently logged in:</h2>
-            <ul>
-                <div>
-                    {% if users|length %}
-                        {% for u in users -%}
-                            {{u.user}}
-                        {% endfor %}
-                    {% else %}
-                        No one
-                    {% endif %}
-                </div>
-            </ul>
+
             <br>
 
-            <form action="/users/submit" method="post">
-                <div>
-                    <label for="userid">User ID</label>
-                    <input type="text" class="form-control" id="userid" name="userid" placeholder="User ID"
-                        autocomplete="off" autofocus>
+            <div class="container">
+                <div class="row">
+                    <div class="col-sm">
+                        <h2>Currently logged in:</h2>
+                        <ul>
+                            <div>
+                                {% if users|length %}
+                                    {% for u in users -%}
+                                        {{u.user}}
+                                    {% endfor %}
+                                {% else %}
+                                    No one
+                                {% endif %}
+                            </div>
+                        </ul>
+                    </div>
+                    <div class="col-sm">
+                        <form action="/users/submit" method="post">
+                            <div>
+                                <label for="userid">User ID</label>
+                                <input type="text" class="form-control" id="userid" name="userid" placeholder="User ID"
+                                    autocomplete="off" autofocus>
+                            </div>
+                            <div class="d-flex justify-content-center">
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Submit</button>
-            </form>
+            </div>
+
+
 
             {% for message in get_flashed_messages(request) %}
             <div class="alert alert-{{message.category}}" role="alert">
