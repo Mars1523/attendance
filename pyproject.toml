@@ -1,0 +1,8 @@
+[project]
+name = "attendance"
+version = "0.1"
+dependencies = [
+    "jinja2",
+    "fastapi[standard]",
+    "sqlmodel"
+]
