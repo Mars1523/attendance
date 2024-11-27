@@ -7,4 +7,5 @@ dependencies = [
     "sqlmodel",
     "starlette",
     "itsdangerous",
+    "python-dotenv",
 ]

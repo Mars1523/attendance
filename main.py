@@ -3,10 +3,10 @@ import io
 import csv
 from typing import Annotated
 import typing
+import os
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request, Response
 from fastapi.responses import (
-    FileResponse,
     HTMLResponse,
     RedirectResponse,
     StreamingResponse,
@@ -15,9 +15,15 @@ from sqlmodel import Field, Session, SQLModel, create_engine, select
 from fastapi.templating import Jinja2Templates
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
+from dotenv import load_dotenv
 
 from datetime import datetime
 
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET")
+if SECRET_KEY is None:
+    raise Exception("SECRET env var must be set. use .env file") 
 
 class Attendance(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -55,7 +61,7 @@ def get_flashed_messages(request: Request):
 templates = Jinja2Templates(directory="templates")
 templates.env.globals["get_flashed_messages"] = get_flashed_messages
 
-middleware = [Middleware(SessionMiddleware, secret_key="marsbot1523")]
+middleware = [Middleware(SessionMiddleware, secret_key=SECRET_KEY)]
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
