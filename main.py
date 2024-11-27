@@ -77,7 +77,11 @@ app = FastAPI(lifespan=lifespan, middleware=middleware)
 @app.get("/", response_class=HTMLResponse)
 @app.post("/", response_class=HTMLResponse)
 def index(request: Request, session: SessionDep):
-    users = session.exec(select(Attendance).where(Attendance.endedAt.is_(None))).all()
+    users = session.exec(
+        select(Attendance)
+        .where(Attendance.endedAt.is_(None))
+        .order_by(Attendance.startedAt.desc())
+    ).all()
     return templates.TemplateResponse(
         request=request, name="index.html", context={"users": users}
     )
