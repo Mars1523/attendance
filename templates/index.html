@@ -19,13 +19,14 @@
         <div class="container">
 
             <h1>Attendance</h1>
+            <a href="/logout">Logout</a>
 
             <br>
 
             <div class="container">
                 <div class="row">
                     <div class="col-sm">
-                        <h2>Currently logged in:</h2>
+                        <h2>Currently clocked in:</h2>
                         <ul>
                             <div>
                                 {% if users|length %}
@@ -53,19 +54,7 @@
                 </div>
             </div>
 
-
-
-            {% for message in get_flashed_messages(request) %}
-            <div class="alert alert-{{message.category}}" role="alert" id="flash-message-{{loop.index}}">
-                {{message.message}}
-                <script>
-                    setTimeout(
-                        () => $("#flash-message-{{loop.index}}").remove(),
-                        5000
-                    )
-                </script>
-            </div>
-            {% endfor %}
+            {% include 'flashed_messages.frag.html' %}
         </div>
     </main>
     <script>

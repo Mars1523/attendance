@@ -1,0 +1,11 @@
+{% for message in get_flashed_messages(request) %}
+<div class="alert alert-{{message.category}}" role="alert" id="flash-message-{{loop.index}}">
+    {{message.message}}
+    <script>
+        setTimeout(
+            () => $("#flash-message-{{loop.index}}").remove(),
+            5000
+        )
+    </script>
+</div>
+{% endfor %}

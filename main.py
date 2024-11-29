@@ -1,21 +1,29 @@
 from contextlib import asynccontextmanager
 import io
 import csv
-from typing import Annotated
+from typing import Annotated, Optional
 import typing
 import os
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request, Response
+from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import (
     HTMLResponse,
     RedirectResponse,
     StreamingResponse,
 )
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from pydantic import BaseModel
+from sqlmodel import Field, Session, select
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.authentication import AuthenticationMiddleware
+from starlette.authentication import (
+    requires,
+)
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
+
+from db import *
+from auth import *
 
 from datetime import datetime
 
@@ -23,29 +31,7 @@ load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET")
 if SECRET_KEY is None:
-    raise Exception("SECRET env var must be set. use .env file") 
-
-class Attendance(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    user: int = Field(index=True)
-    startedAt: datetime = Field(default_factory=datetime.now)
-    endedAt: datetime | None = Field(index=True)
-
-
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
-
-connect_args = {"check_same_thread": False}
-engine = create_engine(sqlite_url, connect_args=connect_args)
-
-
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
-
-
-def get_session():
-    with Session(engine) as session:
-        yield session
+    raise Exception("SECRET env var must be set. use .env file")
 
 
 def flash(request: Request, message: typing.Any, category: typing.Any):
@@ -61,8 +47,10 @@ def get_flashed_messages(request: Request):
 templates = Jinja2Templates(directory="templates")
 templates.env.globals["get_flashed_messages"] = get_flashed_messages
 
-middleware = [Middleware(SessionMiddleware, secret_key=SECRET_KEY)]
-SessionDep = Annotated[Session, Depends(get_session)]
+middleware = [
+    Middleware(SessionMiddleware, secret_key=SECRET_KEY),
+    Middleware(AuthenticationMiddleware, backend=BasicAuthBackend()),
+]
 
 
 @asynccontextmanager
@@ -74,8 +62,54 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan, middleware=middleware)
 
 
+class LoginFormData(BaseModel):
+    userid: Optional[str] = None
+    password: Optional[str] = None
+
+
+@app.get("/login")
+def login(request: Request):
+    if request.session.get("auth") is not None:
+        return RedirectResponse("/")
+    return templates.TemplateResponse(request=request, name="login.html")
+
+
+@app.post("/login")
+def login(
+    request: Request, data: Annotated[LoginFormData, Form()], session: SessionDep
+):
+    user, session = try_login(data.userid, data.password, session)
+    if user is None:
+        flash(request, "invalid user/pass", "danger")
+        return RedirectResponse("/login", 303)
+
+    request.session["auth"] = {"sessionid": session.sessionid}
+
+    # Now that the user is authenticated,
+    # we can send them to their original request destination
+    next_url = request.query_params.get("next")
+    if next_url:
+        return RedirectResponse(next_url)
+    return RedirectResponse("/")
+
+
+@app.get("/logout")
+def logout(request: Request, session: SessionDep):
+    auth = request.session.pop("auth", None)
+    if auth is None:
+        return RedirectResponse("/")
+
+    if "sessionid" not in auth:
+        return RedirectResponse("/")
+
+    try_logout(auth["sessionid"], session)
+
+    return RedirectResponse("/")
+
+
 @app.get("/", response_class=HTMLResponse)
 @app.post("/", response_class=HTMLResponse)
+@requires("authenticated", redirect="login")
 def index(request: Request, session: SessionDep):
     users = session.exec(
         select(Attendance)
@@ -96,6 +130,7 @@ def index(request: Request, session: SessionDep):
 
 
 @app.post("/users/submit")
+@requires("authenticated", redirect="login")
 def submit_userid(
     userid: Annotated[str, Form()], session: SessionDep, request: Request
 ):
@@ -125,7 +160,8 @@ def submit_userid(
 
 
 @app.get("/rawdata")
-def data(session: SessionDep):
+@requires("admin")
+def data(request: Request, session: SessionDep):
     data = session.exec(select(Attendance)).all()
 
     out = io.StringIO()
