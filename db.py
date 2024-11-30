@@ -6,6 +6,10 @@ from sqlalchemy import create_engine
 from sqlmodel import Field, SQLModel, Session
 
 
+class User(SQLModel, table=True):
+    user: int = Field(default=None, primary_key=True)
+    name: str
+
 class AuthUser(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user: int = Field(index=True)
@@ -15,7 +19,7 @@ class AuthUser(SQLModel, table=True):
 
 class AuthSession(SQLModel, table=True):
     sessionid: str = Field(index=True, primary_key=True)
-    user: int = Field(foreign_key="authuser.user")
+    user: int
 
 
 class Attendance(SQLModel, table=True):

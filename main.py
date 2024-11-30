@@ -162,14 +162,16 @@ def submit_userid(
 @app.get("/rawdata")
 @requires("admin")
 def data(request: Request, session: SessionDep):
-    data = session.exec(select(Attendance)).all()
+    data = session.exec(
+        select(Attendance, User).join(User, Attendance.user == User.user, isouter=True)
+    ).all()
 
     out = io.StringIO()
 
     writer = csv.writer(out)
     writer.writerow(["user", "start", "end"])
-    for v in data:
-        writer.writerow([v.user, v.startedAt, v.endedAt])
+    for [att, user] in data:
+        writer.writerow([user.name if user else att.user, att.startedAt, att.endedAt])
 
     export_media_type = "text/csv"
     export_headers = {"Content-Disposition": "attachment; filename=mars-attendance.csv"}

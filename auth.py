@@ -1,4 +1,3 @@
-
 import binascii
 import hashlib
 from typing import Optional, Tuple
@@ -46,7 +45,7 @@ class BasicAuthBackend(AuthenticationBackend):
 
         auth_user = db.exec(
             select(AuthUser)
-            .join(AuthSession)
+            .join(AuthSession, AuthUser.user == AuthSession.user)
             .where(AuthSession.sessionid == auth["sessionid"])
         ).first()
 
@@ -61,7 +60,9 @@ def hash_password(password: str) -> str:
     return binascii.hexlify(dk).decode()
 
 
-def try_login(userid: str, password: str, session: SessionDep) -> Optional[Tuple[AuthUser,AuthSession]]:
+def try_login(
+    userid: str, password: str, session: SessionDep
+) -> Optional[Tuple[AuthUser, AuthSession]]:
     password_hash = hash_password(password)
     db_user = session.exec(
         select(AuthUser)
@@ -84,7 +85,8 @@ def try_login(userid: str, password: str, session: SessionDep) -> Optional[Tuple
     session.commit()
     return db_user, new_session
 
-def try_logout(sessionid: str, session:SessionDep) -> bool:
+
+def try_logout(sessionid: str, session: SessionDep) -> bool:
     auth_session = session.exec(
         select(AuthSession).where(AuthSession.sessionid == sessionid)
     ).first()
