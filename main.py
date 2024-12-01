@@ -182,6 +182,7 @@ def data(request: Request, session: SessionDep):
 
 
 @app.get("/data")
+@requires("admin")
 def data(request: Request, session: SessionDep):
     attendance = session.exec(
         text(

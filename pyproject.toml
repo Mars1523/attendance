@@ -1,5 +1,6 @@
 [project]
 name = "attendance"
+requires-python = ">=3.13"
 version = "0.1"
 dependencies = [
     "jinja2",
