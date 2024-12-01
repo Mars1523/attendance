@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 import io
 import csv
-from typing import Annotated, Optional
+from typing import Annotated, Dict, List, Optional
 import typing
 import os
 
@@ -12,6 +12,7 @@ from fastapi.responses import (
     StreamingResponse,
 )
 from pydantic import BaseModel
+from sqlalchemy import text
 from sqlmodel import Field, Session, select
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.authentication import AuthenticationMiddleware
@@ -178,3 +179,43 @@ def data(request: Request, session: SessionDep):
     return StreamingResponse(
         out.getvalue(), headers=export_headers, media_type=export_media_type
     )
+
+
+@app.get("/data")
+def data(request: Request, session: SessionDep):
+    attendance = session.exec(
+        text(
+            r"""
+select 
+strftime("%G Week %W", startedAt) week,
+strftime("%u", startedAt) day,
+ifnull(name, attendance.user),
+sum(cast((julianday(endedAt)-julianday(startedAt))*24 as real)) as hours
+from attendance
+left full outer join user on attendance.user = user.user
+where endedAt is not null
+group by week, day, attendance.user
+order by week, user.user
+"""
+        )
+    )
+
+    weeks: Dict[str, List[any]] = {}
+
+    days = [
+        "None",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
+
+    for item in attendance:
+        if not item[0] in weeks:
+            weeks[item[0]] = []
+        weeks[item[0]].append((days[int(item[1])], item[2], item[3]))
+
+    return templates.TemplateResponse(request, "simple-log.html", context={"weeks": weeks})
