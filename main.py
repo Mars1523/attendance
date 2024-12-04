@@ -225,7 +225,7 @@ from attendance
 left full outer join user on attendance.user = user.user
 where endedAt is not null
 group by week, day, attendance.user
-order by week, user.user
+order by week desc, user.user
 """
         )
     )
