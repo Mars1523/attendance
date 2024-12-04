@@ -161,7 +161,7 @@ def submit_userid(
 
 
 @app.get("/rawdata")
-@requires("admin")
+@requires("admin", redirect="login")
 def data(request: Request, session: SessionDep):
     data = session.exec(
         select(Attendance, User).join(User, Attendance.user == User.user, isouter=True)
@@ -182,7 +182,7 @@ def data(request: Request, session: SessionDep):
 
 
 @app.get("/data")
-@requires("admin")
+@requires("admin", redirect="login")
 def data(request: Request, session: SessionDep):
     attendance = session.exec(
         text(
