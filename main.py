@@ -122,6 +122,24 @@ def index(request: Request, session: SessionDep):
     )
 
 
+@app.get("/users", response_class=HTMLResponse)
+@requires("admin", redirect="login")
+def users(request: Request, session: SessionDep):
+    users = session.exec(
+        select(User, AuthUser)
+        .outerjoin(AuthUser, User.user == AuthUser.user)
+        .order_by(User.user)
+    ).all()
+    def merge(u):
+        a = u[1].dict() if u[1] is not None else {}
+        u = u[0].dict()
+        return {**u, **a}
+    users = list(map(merge, users))
+    return templates.TemplateResponse(
+        request=request, name="users.html", context={"users": users}
+    )
+
+
 # @app.get("/users/active", response_class=HTMLResponse)
 # def read_items(session: SessionDep):
 #     users = session.exec(select(Attendance).where(Attendance.endedAt.is_(None))).all()
@@ -219,4 +237,6 @@ order by week, user.user
             weeks[item[0]] = []
         weeks[item[0]].append((days[int(item[1])], item[2], item[3]))
 
-    return templates.TemplateResponse(request, "simple-log.html", context={"weeks": weeks})
+    return templates.TemplateResponse(
+        request, "simple-log.html", context={"weeks": weeks}
+    )
