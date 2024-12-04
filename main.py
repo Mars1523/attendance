@@ -154,7 +154,7 @@ def users_raw_text(session: SessionDep):
         return [
              u.user,
              u.name,
-             a.scopes,
+             *([a.scopes] if a else []),
         ]
     users = list(map(merge, users))
 
