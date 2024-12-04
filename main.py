@@ -139,6 +139,13 @@ def users(request: Request, session: SessionDep):
         request=request, name="users.html", context={"users": users}
     )
 
+@app.get("/admin", response_class=HTMLResponse)
+@requires("admin", redirect="login")
+def admin(request: Request):
+    return templates.TemplateResponse(
+        request=request, name="admin.html"
+    )
+
 
 # @app.get("/users/active", response_class=HTMLResponse)
 # def read_items(session: SessionDep):
