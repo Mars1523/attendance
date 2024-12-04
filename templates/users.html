@@ -17,47 +17,39 @@
 </head>
 
 <body>
+    {% include 'header.frag.html' %}
 
     <main>
 
         <div class="container">
-
-            <h1>Attendance</h1>
-            <a href="/logout">Logout</a>
-
-            <br>
-
-            <div class="container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th scope="col">UserId</th>
-                            <th scope="col">Name</th>
-                            <th scope="col">Can Login?</th>
-                            <th scope="col">Admin?</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <th scope="row">{{user.user}}</th>
-                            <td scope="row">{{user.name}}</th>
-                            {% if "password" in user %}
-                                <td scope="row"><i class="bi bi-check"></i>True</th>
-                            {% else %}
-                                <td scope="row"><i class="bi bi-x"></i>False</th>
-                            {% endif %}
-                            {% if "admin" in user.scopes %}
-                                <td scope="row"><i class="bi bi-check"></i>True</th>
-                            {% else %}
-                                <td scope="row"><i class="bi bi-x"></i>False</th>
-                            {% endif %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">UserId</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Can Login?</th>
+                        <th scope="col">Admin?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <th scope="row">{{user.user}}</th>
+                        <td scope="row">{{user.name}}</th>
+                        {% if "password" in user %}
+                            <td scope="row"><i class="bi bi-check"></i>True</th>
+                        {% else %}
+                            <td scope="row"><i class="bi bi-x"></i>False</th>
+                        {% endif %}
+                        {% if "admin" in user.scopes %}
+                            <td scope="row"><i class="bi bi-check"></i>True</th>
+                        {% else %}
+                            <td scope="row"><i class="bi bi-x"></i>False</th>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             {% include 'flashed_messages.frag.html' %}
         </div>
     </main>
