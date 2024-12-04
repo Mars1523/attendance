@@ -131,13 +131,69 @@ def users(request: Request, session: SessionDep):
         .order_by(User.user)
     ).all()
     def merge(u):
-        a = u[1].dict() if u[1] is not None else {}
-        u = u[0].dict()
-        return {**u, **a}
+        u,a=u
+        return {
+            "user": u.user,
+            "name": u.name,
+            "password": a.password,
+            "scopes": a.scopes,
+        }
     users = list(map(merge, users))
     return templates.TemplateResponse(
         request=request, name="users.html", context={"users": users}
     )
+
+def users_raw_text(session: SessionDep):
+    users = session.exec(
+        select(User, AuthUser)
+        .outerjoin(AuthUser, User.user == AuthUser.user)
+        .order_by(User.user)
+    ).all()
+    def merge(u):
+        u,a=u
+        return [
+             u.user,
+             u.name,
+             a.scopes,
+        ]
+    users = list(map(merge, users))
+
+    out = io.StringIO()
+    writer = csv.writer(out, delimiter="|")
+
+    writer.writerow(["#userid", "name", "permissions"])
+    for user in users:
+        writer.writerow(user)
+
+    return out.getvalue()
+
+@app.get("/users/edit", response_class=HTMLResponse)
+@app.post("/users/edit", response_class=HTMLResponse)
+@requires("admin", redirect="login")
+def users_edit(request: Request, session: SessionDep):
+    users = users_raw_text(session)
+    return templates.TemplateResponse(
+        request=request, name="users_edit.html", context={"users": users}
+    )
+
+@app.post("/users/edit/update", response_class=HTMLResponse)
+@requires("admin", redirect="login")
+def users_edit_update(data: Annotated[str, Form()], request: Request, session: SessionDep):
+    data = filter(lambda l:not l.startswith("#"),data.splitlines())
+    users_reader = csv.reader(data,delimiter="|")
+    users = []
+    for user in users_reader:
+        id = user[0]
+        name = user[1]
+        # scopes = user[2] if len(user) > 2 else ""
+        users.append(User(user=id,name=name))
+    
+    for user in users:
+        print(session.merge(user))
+    session.commit()
+
+    flash(request, f"Updated", "success")
+    return RedirectResponse(url="/users/edit")
 
 @app.get("/admin", response_class=HTMLResponse)
 @requires("admin", redirect="login")
