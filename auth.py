@@ -12,7 +12,7 @@ from starlette.authentication import (
 from db import *
 
 class BasicAuthBackend(AuthenticationBackend):
-    def simple_auth(self, db: SessionDep, auth):
+    def _simple_auth(self, db: SessionDep, auth):
         user = auth["user"]
         password_hash = hash_password(auth["pass"])
 
@@ -28,31 +28,30 @@ class BasicAuthBackend(AuthenticationBackend):
         
 
     async def authenticate(self, conn):
-        db = next(get_session())
+        with Session(engine) as db:
+            auth = conn.session.get("auth")
+            if auth is None:
+                headers = conn.headers
+                if "user" in headers and "pass" in headers:
+                    return self._simple_auth(db, headers)
+                print("no auth in session, skipping")
+                return
 
-        auth = conn.session.get("auth")
-        if auth is None:
-            headers = conn.headers
-            if "user" in headers and "pass" in headers:
-                return self.simple_auth(db, headers)
-            print("no auth in session, skipping")
-            return
+            if "sessionid" not in auth:
+                print("no sessionid in session, skipping")
+                conn.session.clear()
+                return
 
-        if "sessionid" not in auth:
-            print("no sessionid in session, skipping")
-            conn.session.clear()
-            return
+            auth_user = db.exec(
+                select(AuthUser)
+                .join(AuthSession, AuthUser.user == AuthSession.user)
+                .where(AuthSession.sessionid == auth["sessionid"])
+            ).first()
 
-        auth_user = db.exec(
-            select(AuthUser)
-            .join(AuthSession, AuthUser.user == AuthSession.user)
-            .where(AuthSession.sessionid == auth["sessionid"])
-        ).first()
+            if auth_user is None:
+                return
 
-        if auth_user is None:
-            return
-
-        return AuthCredentials(auth_user.scopes.split(",")), SimpleUser(auth_user.user)
+            return AuthCredentials(auth_user.scopes.split(",")), SimpleUser(auth_user.user)
 
 
 def hash_password(password: str) -> str:
