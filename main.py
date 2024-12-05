@@ -135,9 +135,14 @@ def users(request: Request, session: SessionDep):
         return {
             "user": u.user,
             "name": u.name,
-            "password": a.password,
-            "scopes": a.scopes,
-        }
+        } | (
+            {
+                "password": a.password,
+                "scopes": a.scopes,
+            }
+            if a is not None
+            else {}
+        )
     users = list(map(merge, users))
     return templates.TemplateResponse(
         request=request, name="users.html", context={"users": users}
