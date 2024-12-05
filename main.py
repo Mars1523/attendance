@@ -227,9 +227,9 @@ def submit_userid(
         flash(request, "Invalid UserID", "danger")
         return RedirectResponse(url="/")
 
-    # if session.exec(select(User).where(User.user == userid)).first() is None:
-    #     flash(request, "Unknown UserID", "danger")
-    #     return RedirectResponse(url="/")
+    if session.exec(select(User).where(User.user == userid)).first() is None:
+        flash(request, "Unknown UserID", "danger")
+        return RedirectResponse(url="/")
 
     open_session = session.exec(
         select(Attendance)
