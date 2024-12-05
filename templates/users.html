@@ -37,12 +37,12 @@
                         <th scope="row">{{user.user}}</th>
                         <td scope="row">{{user.name}}</th>
                         {% if "password" in user %}
-                            <td scope="row"><i class="bi bi-check"></i>True</th>
+                            <td scope="row" class="text-success"><i class="bi bi-check-circle-fill"></i>True</th>
                         {% else %}
                             <td scope="row"><i class="bi bi-x"></i>False</th>
                         {% endif %}
                         {% if "admin" in user.scopes %}
-                            <td scope="row"><i class="bi bi-check"></i>True</th>
+                            <td scope="row" class="text-success"><i class="bi bi-check-circle-fill"></i>True</th>
                         {% else %}
                             <td scope="row"><i class="bi bi-x"></i>False</th>
                         {% endif %}
