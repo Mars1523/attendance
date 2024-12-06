@@ -3,7 +3,7 @@
     {{message.message}}
     <script>
         setTimeout(
-            () => $("#flash-message-{{loop.index}}").remove(),
+            () => document.getElementById("flash-message-{{loop.index}}").remove(),
             5000
         )
     </script>
