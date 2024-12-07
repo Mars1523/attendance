@@ -228,6 +228,11 @@ def submit_userid(
         flash(request, "Invalid UserID", "danger")
         return RedirectResponse(url="/")
 
+    if userid > 10_000:
+        flash(request, f"NO!", "danger")
+        return RedirectResponse(url="/")
+
+
     user = session.exec(select(User).where(User.user == userid)).first()
     if user is None:
         flash(request, f"Unknown UserID `{userid}`", "danger")
