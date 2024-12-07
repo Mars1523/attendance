@@ -18,9 +18,9 @@
                     <h2>Currently clocked in:</h2>
                     <ul>
                         <div>
-                            {% if users|length %}
-                                {% for u in users -%}
-                                <li>{{u.user}}</li>
+                            {% if attendance|length %}
+                                {% for a,u in attendance -%}
+                                <li>{{u.name}}</li>
                                 {% endfor %}
                             {% else %}
                                 No one

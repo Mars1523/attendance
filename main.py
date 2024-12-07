@@ -113,12 +113,13 @@ def logout(request: Request, session: SessionDep):
 @requires("authenticated", redirect="login")
 def index(request: Request, session: SessionDep):
     users = session.exec(
-        select(Attendance)
+        select(Attendance, User)
+        .join(User, User.user == Attendance.user)
         .where(Attendance.endedAt.is_(None))
         .order_by(Attendance.startedAt.desc())
     ).all()
     return templates.TemplateResponse(
-        request=request, name="index.html", context={"users": users}
+        request=request, name="index.html", context={"attendance": users}
     )
 
 
