@@ -228,8 +228,9 @@ def submit_userid(
         flash(request, "Invalid UserID", "danger")
         return RedirectResponse(url="/")
 
-    if session.exec(select(User).where(User.user == userid)).first() is None:
-        flash(request, "Unknown UserID", "danger")
+    user = session.exec(select(User).where(User.user == userid)).first()
+    if user is None:
+        flash(request, f"Unknown UserID `{userid}`", "danger")
         return RedirectResponse(url="/")
 
     open_session = session.exec(
@@ -242,12 +243,12 @@ def submit_userid(
         open_session.endedAt = datetime.now()
         session.add(open_session)
         session.commit()
-        flash(request, f"Goodbye {userid}", "info")
+        flash(request, f"Goodbye {user.name}", "info")
         return RedirectResponse(url="/")
     else:
         session.add(Attendance(user=userid))
         session.commit()
-        flash(request, f"Hello {userid}", "success")
+        flash(request, f"Hello {user.name}", "success")
         return RedirectResponse(url="/")
 
 
