@@ -20,7 +20,7 @@
                         <div>
                             {% if attendance|length %}
                                 {% for a,u in attendance -%}
-                                <li>{{u.name}}</li>
+                                <li>{{u.name}} - #{{u.user}}</li>
                                 {% endfor %}
                             {% else %}
                                 No one
