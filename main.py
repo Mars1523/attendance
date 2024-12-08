@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 from db import *
 from auth import *
 
-from datetime import datetime
+from datetime import datetime, date, time
 
 load_dotenv()
 
@@ -350,3 +350,27 @@ order by week desc, user.user
     return templates.TemplateResponse(
         request, "simple-log.html", context={"weeks": weeks}
     )
+
+
+class ClockoutAllFormData(BaseModel):
+    date: date
+    time: time
+
+
+@app.post("/api/clockout-all")
+@requires("admin", redirect="login")
+def clockout_all(
+    request: Request, session: SessionDep, data: Annotated[ClockoutAllFormData, Form()]
+):
+    sessions = session.exec(
+        select(Attendance)
+        .where(Attendance.endedAt.is_(None))
+        .order_by(Attendance.startedAt.desc())
+    ).all()
+
+    for ses in sessions:
+        ses.endedAt = datetime.combine(data.date, data.time)
+        session.add(ses)
+    session.commit()
+    flash(request, f"Clocked out {len(sessions)} users", "success")
+    return RedirectResponse("/admin")
