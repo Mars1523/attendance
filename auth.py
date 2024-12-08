@@ -49,6 +49,8 @@ class BasicAuthBackend(AuthenticationBackend):
             ).first()
 
             if auth_user is None:
+                print("user has sessionid but it's not valid")
+                conn.session.clear()
                 return
 
             return AuthCredentials(auth_user.scopes.split(",")), SimpleUser(auth_user.user)
