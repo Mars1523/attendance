@@ -121,8 +121,8 @@ def login(
     # we can send them to their original request destination
     next_url = request.query_params.get("next")
     if next_url:
-        return RedirectResponse(next_url)
-    return RedirectResponse("/")
+        return RedirectResponse(next_url, 303)
+    return RedirectResponse("/", 303)
 
 
 @app.get("/logout")
@@ -140,7 +140,6 @@ def logout(request: Request, session: SessionDep):
 
 
 @app.get("/", response_class=HTMLResponse)
-@app.post("/", response_class=HTMLResponse)
 @requires("authenticated", redirect="login")
 def index(request: Request, session: SessionDep):
     users = session.exec(
@@ -205,7 +204,6 @@ def users_raw_text(session: SessionDep):
     return out.getvalue()
 
 @app.get("/users/edit", response_class=HTMLResponse)
-@app.post("/users/edit", response_class=HTMLResponse)
 @requires("admin", redirect="login")
 def users_edit(request: Request, session: SessionDep):
     users = users_raw_text(session)
@@ -230,7 +228,7 @@ def users_edit_update(data: Annotated[str, Form()], request: Request, session: S
     session.commit()
 
     flash(request, f"Updated", "success")
-    return RedirectResponse(url="/users/edit")
+    return RedirectResponse("/users/edit", 303)
 
 @app.get("/admin", response_class=HTMLResponse)
 @requires("admin", redirect="login")
@@ -257,23 +255,23 @@ def submit_userid(
 
     if userid == "+711":
         logout(request, session)
-        return RedirectResponse(url="/")
+        return RedirectResponse("/", 303)
 
     try:
         userid = int(userid)
     except ValueError:
         flash(request, "Invalid UserID", "danger")
-        return RedirectResponse(url="/")
+        return RedirectResponse("/", 303)
 
     if userid > 10_000:
         flash(request, f"NO!", "danger")
-        return RedirectResponse(url="/")
+        return RedirectResponse("/", 303)
 
 
     user = session.exec(select(User).where(User.user == userid)).first()
     if user is None:
         flash(request, f"Unknown UserID `{userid}`", "danger")
-        return RedirectResponse(url="/")
+        return RedirectResponse("/", 303)
 
     open_session = session.exec(
         select(Attendance)
@@ -286,12 +284,12 @@ def submit_userid(
         session.add(open_session)
         session.commit()
         flash(request, f"Goodbye {user.name}", "info")
-        return RedirectResponse(url="/")
+        return RedirectResponse("/", 303)
     else:
         session.add(Attendance(user=userid))
         session.commit()
         flash(request, f"Hello {user.name}", "success")
-        return RedirectResponse(url="/")
+        return RedirectResponse("/", 303)
 
 
 @app.get("/rawdata")
@@ -379,4 +377,4 @@ def clockout_all(
         session.add(ses)
     session.commit()
     flash(request, f"Clocked out {len(sessions)} users", "success")
-    return RedirectResponse("/admin")
+    return RedirectResponse("/admin", 303)
