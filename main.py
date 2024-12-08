@@ -5,20 +5,23 @@ from typing import Annotated, Dict, List, Optional
 import typing
 import os
 
-from fastapi import Depends, FastAPI, Form, Request
+from fastapi import FastAPI, Form, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import (
     HTMLResponse,
+    PlainTextResponse,
     RedirectResponse,
     StreamingResponse,
 )
 from pydantic import BaseModel
 from sqlalchemy import text
-from sqlmodel import Field, Session, select
+from sqlmodel import select
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.authentication import (
     requires,
 )
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
@@ -61,6 +64,34 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan, middleware=middleware)
+
+@app.exception_handler(Exception)
+async def http_exception_handler(request, exc):
+    return templates.TemplateResponse(
+        request=request,
+        name="error.html",
+        context={"error": str(exc), "code": 500},
+        status_code=500,
+    )
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request, exc):
+    return templates.TemplateResponse(
+        request=request,
+        name="error.html",
+        context={"error": str(exc.detail), "code": exc.status_code},
+        status_code=exc.status_code,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return templates.TemplateResponse(
+        request=request,
+        name="error.html",
+        context={"error": str(exc), "code": 400},
+        status_code=400,
+    )
 
 
 class LoginFormData(BaseModel):
