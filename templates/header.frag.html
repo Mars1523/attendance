@@ -2,6 +2,6 @@
     <a class="navbar-brand" href="/">Attendance</a>
     {% if "admin" in request.auth.scopes %}
         <a class="btn btn-link" href="/admin">Admin</a>
+        <a class="btn btn-link" href="/logout">Logout</a>
     {% endif %}
-    <a class="btn btn-link" href="/logout">Logout</a>
 </nav>
