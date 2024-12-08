@@ -253,6 +253,12 @@ def admin(request: Request):
 def submit_userid(
     userid: Annotated[str, Form()], session: SessionDep, request: Request
 ):
+    userid = userid.strip()
+
+    if userid == "+711":
+        logout(request, session)
+        return RedirectResponse(url="/")
+
     try:
         userid = int(userid)
     except ValueError:
