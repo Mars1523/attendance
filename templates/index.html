@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance</title>
     {% include 'bootstrap.css.frag' %}
+    {% include 'popper.js.frag' %}
+    {% include 'bootstrap.js.frag' %}
 </head>
 
 <body>
@@ -28,7 +30,7 @@
                     </ul>
                 </div>
                 <div class="col-sm">
-                    <form action="/users/submit" method="post">
+                    <form action="/users/submit" method="post" id="attendanceForm">
                         <div>
                             <label for="userid">User ID</label>
                             <input type="text" class="form-control" id="userid" name="userid" placeholder="User ID"
@@ -36,7 +38,7 @@
                         </div>
                         <br>
                         <div class="d-flex justify-content-center">
-                            <button type="submit" class="btn btn-primary">Submit</button>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmModal" onclick="return false;">Submit</button>
                         </div>
                     </form>
                     {% include 'flashed_messages.frag.html' %}
@@ -56,12 +58,59 @@
             </div>
 
         </div>
+        
+        <!-- Modal -->
+        <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <h1><span id="confirmUserName"></span>?</h1>
+                        <p>Press enter to confirm</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="confirmModal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="confirm()">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
     <script>
-        function inputFocus() {
+        let modalVisible = false
+
+        const modalEl = document.getElementById('confirmModal')
+        modalEl.addEventListener('hide.bs.modal', event => {
+            modalVisible = false
+            document.getElementById("confirmUserName").textContent = "?"
+        })
+        modalEl.addEventListener('show.bs.modal', event => {
+            modalVisible = true
+        })
+
+        function confirm() {
+            document.getElementById("attendanceForm").submit()
+        }
+
+        function inputFocus(e) {
+            if (modalVisible) {
+                if (e.key == "Enter") {
+                    confirm()
+                } 
+                return
+            }
+
             document.getElementById("userid").focus()
         }
         window.onkeydown = inputFocus;
+
+        async function getUser(userid) {
+            return await fetch(`/api/whois/${userid}`).then(r=>r.text())
+        }
+
+        document.getElementById("confirmModal").addEventListener("show.bs.modal", () => {
+            let userid = document.getElementById("userid").value;
+            fetch(`/api/whois/${userid}`).then(r=>r.text()).then(u=>document.getElementById("confirmUserName").textContent=u)
+        })
     </script>
 </body>
 

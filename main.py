@@ -237,6 +237,12 @@ def admin(request: Request):
         request=request, name="admin.html"
     )
 
+@app.get("/api/whois/{userid}", response_class=HTMLResponse)
+def read_items(session: SessionDep, userid: int):
+    user = session.exec(select(User).where(User.user == userid)).first()
+    if user:
+        return user.name
+    return "Unknown"
 
 # @app.get("/users/active", response_class=HTMLResponse)
 # def read_items(session: SessionDep):
