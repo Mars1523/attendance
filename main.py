@@ -237,8 +237,12 @@ def admin(request: Request):
         request=request, name="admin.html"
     )
 
-@app.get("/api/whois/{userid}", response_class=HTMLResponse)
-def read_items(session: SessionDep, userid: int):
+@app.get("/api/whois/{userid_s}", response_class=HTMLResponse)
+def read_items(session: SessionDep, userid_s: str):
+    try:
+        userid = int(userid_s)
+    except:
+        return "Invalid UserId"
     user = session.exec(select(User).where(User.user == userid)).first()
     if user:
         return user.name

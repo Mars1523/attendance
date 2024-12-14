@@ -68,7 +68,7 @@
                         <p>Press enter to confirm</p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="confirmModal">Close</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-bs-target="#confirmModal">Close</button>
                         <button type="button" class="btn btn-primary" onclick="confirm()">Submit</button>
                     </div>
                 </div>
@@ -81,10 +81,14 @@
         const modalEl = document.getElementById('confirmModal')
         modalEl.addEventListener('hide.bs.modal', event => {
             modalVisible = false
+        })
+        modalEl.addEventListener('hidden.bs.modal', event => {
             document.getElementById("confirmUserName").textContent = "?"
         })
-        modalEl.addEventListener('show.bs.modal', event => {
+        modalEl.addEventListener("show.bs.modal", () => {
             modalVisible = true
+            let userid = document.getElementById("userid").value;
+            fetch(`/api/whois/${userid}`).then(r=>r.text()).then(u=>document.getElementById("confirmUserName").textContent=u)
         })
 
         function confirm() {
@@ -95,7 +99,9 @@
             if (modalVisible) {
                 if (e.key == "Enter") {
                     confirm()
-                } 
+                } else {
+                    modalEl.dismiss()
+                }
                 return
             }
 
@@ -107,10 +113,6 @@
             return await fetch(`/api/whois/${userid}`).then(r=>r.text())
         }
 
-        document.getElementById("confirmModal").addEventListener("show.bs.modal", () => {
-            let userid = document.getElementById("userid").value;
-            fetch(`/api/whois/${userid}`).then(r=>r.text()).then(u=>document.getElementById("confirmUserName").textContent=u)
-        })
     </script>
 </body>
 
