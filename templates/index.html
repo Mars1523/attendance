@@ -82,7 +82,11 @@
             if (userid.trim() == "") {
                 return ""
             }
-            return await fetch(`/api/whois/${userid}`).then(r => r.text())
+            let result = await fetch(`/api/whois/${userid}`)
+            if (result.status != 200) {
+                return ""
+            }
+            return await r.text()
         }
 
         const modalEl = document.getElementById('confirmModal')
@@ -123,11 +127,6 @@
             document.getElementById("userid").focus()
         }
         window.onkeydown = inputFocus;
-
-        async function getUser(userid) {
-            return await fetch(`/api/whois/${userid}`).then(r=>r.text())
-        }
-
     </script>
 </body>
 
