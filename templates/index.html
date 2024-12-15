@@ -38,7 +38,7 @@
                         </div>
                         <br>
                         <div class="d-flex justify-content-center">
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmModal" onclick="return false;">Submit</button>
+                            <button class="btn btn-primary" onclick="idEntered(); return false;">Submit</button>
                         </div>
                     </form>
                     {% include 'flashed_messages.frag.html' %}
@@ -78,7 +78,15 @@
     <script>
         let modalVisible = false
 
+        async function whois(userid/*:string*/) {
+            if (userid.trim() == "") {
+                return ""
+            }
+            return await fetch(`/api/whois/${userid}`).then(r => r.text())
+        }
+
         const modalEl = document.getElementById('confirmModal')
+        const modal = new bootstrap.Modal(modalEl)
         modalEl.addEventListener('hide.bs.modal', event => {
             modalVisible = false
         })
@@ -88,11 +96,18 @@
         modalEl.addEventListener("show.bs.modal", () => {
             modalVisible = true
             let userid = document.getElementById("userid").value;
-            fetch(`/api/whois/${userid}`).then(r=>r.text()).then(u=>document.getElementById("confirmUserName").textContent=u)
+            whois(userid).then(u=>document.getElementById("confirmUserName").textContent=u)
         })
 
         function confirm() {
             document.getElementById("attendanceForm").submit()
+        }
+
+        function idEntered() {
+            let userid = document.getElementById("userid").value;
+            if (userid.trim() !== "") {
+                modal.show()
+            }
         }
 
         function inputFocus(e) {
@@ -100,7 +115,7 @@
                 if (e.key == "Enter") {
                     confirm()
                 } else {
-                    modalEl.dismiss()
+                    modal.hide()
                 }
                 return
             }
