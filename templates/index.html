@@ -86,7 +86,7 @@
             if (result.status != 200) {
                 return ""
             }
-            return await r.text()
+            return await result.text()
         }
 
         const modalEl = document.getElementById('confirmModal')
