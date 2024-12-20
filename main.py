@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
 import io
 import csv
+import itertools
 from typing import Annotated, Dict, List, Optional
 import typing
 import os
 
-from fastapi import FastAPI, Form, Request
+from fastapi import Body, FastAPI, Form, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import (
     HTMLResponse,
@@ -153,7 +154,7 @@ def index(request: Request, session: SessionDep):
     )
 
 
-@app.get("/users", response_class=HTMLResponse)
+@app.get("/admin/users", response_class=HTMLResponse)
 @requires("admin", redirect="login")
 def users(request: Request, session: SessionDep):
     users = session.exec(
@@ -203,7 +204,8 @@ def users_raw_text(session: SessionDep):
 
     return out.getvalue()
 
-@app.get("/users/edit", response_class=HTMLResponse)
+
+@app.get("/admin/users/edit", response_class=HTMLResponse)
 @requires("admin", redirect="login")
 def users_edit(request: Request, session: SessionDep):
     users = users_raw_text(session)
@@ -211,7 +213,8 @@ def users_edit(request: Request, session: SessionDep):
         request=request, name="users_edit.html", context={"users": users}
     )
 
-@app.post("/users/edit/update", response_class=HTMLResponse)
+
+@app.post("/admin/users/edit/update", response_class=HTMLResponse)
 @requires("admin", redirect="login")
 def users_edit_update(data: Annotated[str, Form()], request: Request, session: SessionDep):
     data = filter(lambda l:not l.startswith("#"),data.splitlines())
@@ -222,13 +225,13 @@ def users_edit_update(data: Annotated[str, Form()], request: Request, session: S
         name = user[1]
         # scopes = user[2] if len(user) > 2 else ""
         users.append(User(user=id,name=name))
-    
+
     for user in users:
         print(session.merge(user))
     session.commit()
 
     flash(request, f"Updated", "success")
-    return RedirectResponse("/users/edit", 303)
+    return RedirectResponse("/admin/users/edit", 303)
 
 @app.get("/admin", response_class=HTMLResponse)
 @requires("admin", redirect="login")
@@ -277,7 +280,6 @@ def submit_userid(
         flash(request, f"NO!", "danger")
         return RedirectResponse("/", 303)
 
-
     user = session.exec(select(User).where(User.user == userid)).first()
     if user is None:
         flash(request, f"Unknown UserID `{userid}`", "danger")
@@ -302,7 +304,7 @@ def submit_userid(
         return RedirectResponse("/", 303)
 
 
-@app.get("/rawdata")
+@app.get("/admin/rawdata")
 @requires("admin", redirect="login")
 def data(request: Request, session: SessionDep):
     data = session.exec(
@@ -323,46 +325,101 @@ def data(request: Request, session: SessionDep):
     )
 
 
-@app.get("/data")
+class EntryUpdate(BaseModel):
+    id: int
+    startedAt: str
+    endedAt: str
+
+
+@app.post("/api/entries/update")
+@requires("admin")
+def update_entires(request: Request, update: EntryUpdate, session: SessionDep):
+    startedAt = datetime.fromisoformat(update.startedAt).replace(tzinfo=None)
+    endedAt = datetime.fromisoformat(update.endedAt).replace(tzinfo=None)
+
+    entry = session.exec(select(Attendance).where(Attendance.id == update.id)).first()
+    if entry is None:
+        print(f"no entry found for id {update.id}")
+        return
+    
+    print("old entry",entry)
+    entry.startedAt = startedAt
+    entry.endedAt = endedAt
+
+    print("new entry",entry)
+    session.add(entry)
+    session.commit()
+
+    return "ok"
+
+@app.post("/api/entries/delete")
+@requires("admin")
+def update_entires(request: Request, id: Annotated[int, Body(embed=True)], session: SessionDep):
+    entry = session.exec(select(Attendance).where(Attendance.id == id)).first()
+    print(entry)
+    if entry is None:
+        print(f"no entry found for id {id}")
+        return
+    
+    session.delete(entry)
+    session.commit()
+    
+    return "ok"
+
+
+@app.get("/admin/entries")
 @requires("admin", redirect="login")
 def data(request: Request, session: SessionDep):
     attendance = session.exec(
-        text(
-            r"""
-select 
-strftime("%G Week %W", startedAt) week,
-strftime("%u", startedAt) day,
-ifnull(name, attendance.user),
-sum(cast((julianday(endedAt)-julianday(startedAt))*24 as real)) as hours
-from attendance
-left full outer join user on attendance.user = user.user
-where endedAt is not null
-group by week, day, attendance.user
-order by week desc, user.user
-"""
-        )
-    )
+        select(Attendance, User)
+        .join(User, User.user == Attendance.user)
+        .order_by(Attendance.startedAt.desc())
+    ).all()
 
-    weeks: Dict[str, List[any]] = {}
+    datetimeToHtml = lambda dt: dt.strftime("%Y-%m-%d %H:%M")
 
-    days = [
-        "None",
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday",
-    ]
+    table = ""
 
-    for item in attendance:
-        if not item[0] in weeks:
-            weeks[item[0]] = []
-        weeks[item[0]].append((days[int(item[1])], item[2], item[3]))
+    dayFormat = lambda dt: dt.strftime("%A, %Y-%-m-%d")
+    groups_by_day = itertools.groupby(attendance, lambda v: dayFormat(v[0].startedAt))
+
+    for day, day_items in groups_by_day:
+        table += '<th colspan="5">' + day + "</th>"
+        for atnd, user in day_items:
+            table += '<tr data-id="' + str(atnd.id) + '">'
+            table += "<td>"
+            table += str(user.name or user.user)
+            table += "</td>"
+            table += "<td>"
+            if atnd.startedAt is not None:
+                table += (
+                    '<input name="startedAt" type="datetime-local" value="'
+                    + datetimeToHtml(atnd.startedAt)
+                    + '">'
+                )
+            else:
+                table += "None"
+            table += "</td>"
+            table += "<td>"
+            if atnd.endedAt is not None:
+                table += (
+                    '<input name="endedAt" type="datetime-local" value="'
+                    + datetimeToHtml(atnd.endedAt)
+                    + '">'
+                )
+            else:
+                table += "None"
+            table += "</td>"
+            table += "<td>"
+            table += '<button type="button" class="btn btn-outline-primary" onclick="updateEntry(this)">Update</button>'
+            table += "</td>"
+            table += "<td>"
+            table += '<button type="button" class="btn btn-outline-danger" onclick="deleteEntry(this)">Delete</button>'
+            table += "</td>"
+            table += "</tr>"
 
     return templates.TemplateResponse(
-        request, "simple-log.html", context={"weeks": weeks}
+        request, "entries.html", context={"tableBody": table}
     )
 
 
