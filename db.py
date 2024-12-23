@@ -10,6 +10,9 @@ class User(SQLModel, table=True):
     user: int = Field(default=None, primary_key=True)
     name: str
 
+    def displayName(self):
+        return self.name or str(self.user)
+
 class AuthUser(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user: int = Field(index=True)

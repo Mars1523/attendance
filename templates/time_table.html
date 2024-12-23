@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance</title>
+    {% include 'bootstrap.css.frag' %}
+    <style>
+        table {
+            border-collapse: collapse;
+            border: 2px solid rgb(140 140 140);
+        }
+
+        th,
+        td {
+            border: 1px solid rgb(160 160 160);
+            padding: 8px 10px;
+        }
+
+        tbody>tr>th {
+            background-color: rgb(201, 201, 201);
+        }
+
+        th[scope="col"]{
+            position: sticky;
+            /* 0px if you don't have a navbar, but something is required */
+            top: 0px;
+            background: white;
+        }
+
+    </style>
+</head>
+
+<body>
+    {% include 'header.frag.html' %}
+
+    <main>
+        <div class="container">
+            <div class="container">
+                <table>
+                    <tbody>
+                        {{tableBody|safe}}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'flashed_messages.frag.html' %}
+        </div>
+    </main>
+
+</body>
+
+</html>

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from contextlib import asynccontextmanager
 import io
 import csv
@@ -16,7 +17,7 @@ from fastapi.responses import (
 )
 from pydantic import BaseModel
 from sqlalchemy import text
-from sqlmodel import select
+from sqlmodel import or_, select
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.authentication import (
@@ -30,7 +31,9 @@ from dotenv import load_dotenv
 from db import *
 from auth import *
 
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
+
+from timeline import Timeline
 
 load_dotenv()
 
@@ -388,7 +391,7 @@ def data(request: Request, session: SessionDep):
         for atnd, user in day_items:
             table += '<tr data-id="' + str(atnd.id) + '">'
             table += "<td>"
-            table += str(user.name or user.user)
+            table += user.displayName()
             table += "</td>"
             table += "<td>"
             if atnd.startedAt is not None:
@@ -420,6 +423,91 @@ def data(request: Request, session: SessionDep):
 
     return templates.TemplateResponse(
         request, "entries.html", context={"tableBody": table}
+    )
+
+
+def round_down_to_week_start(dt):
+    # Get the start of the week (Monday)
+    start_of_week = dt - timedelta(days=dt.weekday())
+    # Set time to midnight
+    return start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+
+@app.get("/admin/time")
+@requires("admin", redirect="login")
+def time_table(request: Request, session: SessionDep):
+    attendance = session.exec(
+        select(Attendance, User)
+        .join(User, User.user == Attendance.user)
+        .order_by(Attendance.startedAt.desc())
+    ).all()
+
+    table = ""
+
+    def timeFormat(td: timedelta):
+        if td.total_seconds() == 0:
+            return ""
+        else:
+            return str(round(td.total_seconds() / 60 / 60, 1))
+
+    dayFormat = lambda dt: dt.strftime("%a %m/%d")
+    weekFormat = lambda dt: dt.strftime("%Y-%-m-%d")
+    weeks = itertools.groupby(
+        attendance, lambda v: round_down_to_week_start(v[0].startedAt)
+    )
+
+    user_timelines = defaultdict(lambda: Timeline())
+    for atnd, user in attendance:
+        user_timelines[user.displayName()].add(atnd.startedAt, atnd.endedAt)
+    
+    year = datetime(year=datetime.now().year, month=1, day=1)
+    end_of_year = datetime(year=datetime.now().year + 1, month=1, day=1) - timedelta(
+        microseconds=1
+    )
+
+    for week, week_items in weeks:
+        end_of_week = week + timedelta(days=7) - timedelta(microseconds=1)
+        user_attendance = {}
+        for user, tl in sorted(user_timelines.items(), key=lambda v:v[0]):
+            days = []
+            for day in range(7):
+                slices = tl.slice_day_cc(week + timedelta(days=day))
+                days.append(
+                    sum(map(lambda s: s.end - s.start, slices), start=timedelta())
+                )
+
+            week_total = sum(
+                map(lambda s: s.end - s.start, tl.slice_week_cc(week)),
+                start=timedelta(),
+            )
+            year_total = sum(
+                map(lambda s: s.end - s.start, tl.slice_between_cc(year, end_of_week)),
+                start=timedelta(),
+            )
+
+            user_attendance[user] = [*days, week_total, year_total]
+
+        table += "<tr>"
+        table += '<th scope="col">' + weekFormat(week) + "</th>"
+        for dayi in range(0, 7):
+            table += (
+                '<th scope="col">' + dayFormat(week + timedelta(days=dayi)) + "</th>"
+            )
+        table += '<th scope="col">Week Total</th>'
+        table += '<th scope="col">Year Total</th>'
+        table += "</tr>"
+        for user, atnd in user_attendance.items():
+            table += "<tr>"
+            table += '<th scope="row">'
+            table += str(user)
+            table += "</th>"
+            for a in atnd:
+                table += "<td>"
+                table += timeFormat(a)
+                table += "</td>"
+            table += "</tr>"
+
+    return templates.TemplateResponse(
+        request, "time_table.html", context={"tableBody": table}
     )
 
 
