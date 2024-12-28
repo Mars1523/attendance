@@ -73,12 +73,6 @@ def try_login(
     if db_user is None:
         return None, None
 
-    old_sessions = session.exec(
-        select(AuthSession).where(AuthSession.user == db_user.user)
-    ).all()
-    for sess in old_sessions:
-        session.delete(sess)
-
     sessionid = uuid4().hex
     new_session = AuthSession(sessionid=sessionid, user=db_user.user)
 
