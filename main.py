@@ -438,6 +438,7 @@ def time_table(request: Request, session: SessionDep):
     attendance = session.exec(
         select(Attendance, User)
         .join(User, User.user == Attendance.user)
+        # .where(Attendance.endedAt.isnot(None))
         .order_by(Attendance.startedAt.desc())
     ).all()
 
@@ -457,7 +458,7 @@ def time_table(request: Request, session: SessionDep):
 
     user_timelines = defaultdict(lambda: Timeline())
     for atnd, user in attendance:
-        user_timelines[user.displayName()].add(atnd.startedAt, atnd.endedAt)
+        user_timelines[user.displayName()].add(atnd.startedAt, atnd.endedAt or datetime.now())
     
     year = datetime(year=datetime.now().year, month=1, day=1)
     end_of_year = datetime(year=datetime.now().year + 1, month=1, day=1) - timedelta(
