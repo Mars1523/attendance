@@ -15,10 +15,11 @@
             <div class="col">
                 <ul>
                     <li><a href="/admin/time">Attendance Overview</a></li>
-                    <li><a href="/admin/entries">Time Entry Viewer</a></li>
+                    <li><a href="/admin/entries">Time Entry Editor</a></li>
                     <li><a href="/admin/users">User list</a></li>
                 </ul>
                 <h3>Mass clock-out:</h3>
+                <p>This will mark anyone clocked in as being clocked out at the below time.</p>
                 <form action="/api/clockout-all" method="post">
                     <div class="container">
                         <label for="date">Clockout date:</label>
@@ -31,6 +32,11 @@
                         <button type="submit" class="btn btn-primary">Submit</button>
                     </div>
                 </form>
+
+                <p>Plus codes can be entered on the clock in page:</p>
+                <ul>
+                    <li>+711 - Log out</li>
+                </ul>
             </div>
 
             {% include 'flashed_messages.frag.html' %}
