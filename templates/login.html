@@ -35,6 +35,23 @@
             {% include 'flashed_messages.frag.html' %}
         </div>
     </main>
+    <script>
+        let useridEl = document.getElementById("userid")
+        let passwordEl = document.getElementById("password")
+
+        function inputFocus(e) {
+            console.log(e.key)
+            if (e.key == "Enter" || e.key == ".") {
+                if (useridEl.value.trim() !== "" && passwordEl.value.trim() === "") {
+                    passwordEl.focus()
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        window.onkeydown = inputFocus;
+    </script>
 </body>
 
 </html>
