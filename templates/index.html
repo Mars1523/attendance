@@ -8,6 +8,13 @@
     {% include 'bootstrap.css.frag' %}
     {% include 'popper.js.frag' %}
     {% include 'bootstrap.js.frag' %}
+    <style>
+        .two-column {
+            columns: 2;
+            -webkit-columns: 2;
+            -moz-columns: 2;
+        }
+    </style>
 </head>
 
 <body>
@@ -15,9 +22,9 @@
     <main>
         <div class="container">
             <div class="row">
-                <div class="col-sm">
+                <div class="col-sm-8">
                     <h2>Currently clocked in:</h2>
-                    <ul>
+                    <ul class="two-column">
                         <div>
                             {% if attendance|length %}
                                 {% for a,u in attendance -%}
@@ -31,12 +38,11 @@
                 </div>
                 <div class="col-sm">
                     <form action="/users/submit" method="post" id="attendanceForm">
-                        <div>
-                            <label for="userid">User ID</label>
+                        <div class="py-3">
+                            <!-- <label for="userid">User ID</label> -->
                             <input type="text" class="form-control" id="userid" name="userid" placeholder="User ID"
                                 autocomplete="off" autofocus>
                         </div>
-                        <br>
                         <div class="d-flex justify-content-center">
                             <button class="btn btn-primary" onclick="idEntered(); return false;">Submit</button>
                         </div>
