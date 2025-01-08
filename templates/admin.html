@@ -43,6 +43,11 @@
         </div>
     </main>
     <script>
+        function isWeekend(date) {
+            var dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+            return (dayOfWeek === 0 || dayOfWeek === 6); // true if it's Sunday or Saturday
+        }
+
         function toDateInputValue(dateObject){
             const local = new Date(dateObject);
             local.setMinutes(dateObject.getMinutes() - dateObject.getTimezoneOffset());
@@ -50,6 +55,7 @@
         };
 
         document.getElementById('date').value = toDateInputValue(new Date());
+        document.getElementById('atime').value = isWeekend(new Date()) ? "17:00" : "20:00";
 
     </script>
 </body>
