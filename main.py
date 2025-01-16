@@ -16,7 +16,7 @@ from fastapi.responses import (
     StreamingResponse,
 )
 from pydantic import BaseModel
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlmodel import or_, select
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.authentication import AuthenticationMiddleware
@@ -162,22 +162,32 @@ def index(request: Request, session: SessionDep):
 def users(request: Request, session: SessionDep):
     users = session.exec(
         select(User, AuthUser)
-        .outerjoin(AuthUser, User.user == AuthUser.user)
+        .outerjoin(AuthUser, User.user == AuthUser.user, full=True)
         .order_by(User.user)
     ).all()
     def merge(u):
         u,a=u
-        return {
-            "user": u.user,
-            "name": u.name,
-        } | (
+        user_info = (
             {
+                "user": a.user,
+                "name": "<No User Entry for AuthUser>",
+            }
+            if u is None
+            else {
+                "user": u.user,
+                "name": u.name,
+            }
+        )
+        auth_info = (
+            {}
+            if a is None
+            else {
                 "password": a.password,
                 "scopes": a.scopes,
             }
-            if a is not None
-            else {}
         )
+
+        return user_info | auth_info
     users = list(map(merge, users))
     return templates.TemplateResponse(
         request=request, name="users.html", context={"users": users}
