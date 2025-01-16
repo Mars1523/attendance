@@ -2,7 +2,7 @@ import binascii
 import hashlib
 from typing import Optional, Tuple
 from uuid import uuid4
-from sqlmodel import select
+from sqlmodel import select, or_
 from starlette.authentication import (
     AuthCredentials,
     AuthenticationBackend,
@@ -67,7 +67,8 @@ def try_login(
     password_hash = hash_password(password)
     db_user = session.exec(
         select(AuthUser)
-        .where(AuthUser.user == userid)
+        .join(User, User.user == AuthUser.user)
+        .where(or_(AuthUser.user == userid, User.name == userid))
         .where(AuthUser.password == password_hash)
     ).first()
     if db_user is None:
