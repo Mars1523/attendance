@@ -442,6 +442,73 @@ def round_down_to_week_start(dt):
     # Set time to midnight
     return start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
 
+
+@app.get("/admin/time/weeks")
+@requires("admin", redirect="login")
+def time_table(request: Request, session: SessionDep):
+    attendance = session.exec(
+        select(Attendance, User)
+        .join(User, User.user == Attendance.user)
+        .where(Attendance.endedAt.isnot(None))
+        .order_by(Attendance.startedAt.desc())
+    ).all()
+    users = session.exec(
+        select(User)
+        .join(AuthUser, AuthUser.user == User.user, isouter=True, full=True)
+        .where(AuthUser.user == None)
+        .order_by(User.user)
+    ).all()
+
+    table = ""
+
+    def timeFormat(td: timedelta):
+        if td.total_seconds() == 0:
+            return ""
+        else:
+            return str(round(td.total_seconds() / 60 / 60, 1))
+
+    weekFormat = lambda dt: dt.strftime("%Y-%-m-%d")
+    weeks = itertools.groupby(
+        attendance, lambda v: round_down_to_week_start(v[0].startedAt)
+    )
+
+    user_timelines = defaultdict(lambda: Timeline())
+    for atnd, user in attendance:
+        user_timelines[user.displayName()].add(
+            atnd.startedAt, atnd.endedAt or datetime.now()
+        )
+
+    table += "<tr>"
+    table += '<th scope="col">Week</th>'
+    for user in users:
+        table += '<th scope="col">' + user.name + "</th>"
+    for week, week_items in weeks:
+        user_attendance = {}
+        for user, tl in sorted(user_timelines.items(), key=lambda v: v[0]):
+            week_total = sum(
+                map(lambda s: s.end - s.start, tl.slice_week_cc(week)),
+                start=timedelta(),
+            )
+
+            user_attendance[user] = week_total
+
+        table += "<tr>"
+        # week column
+        table += '<th scope="row">' + weekFormat(week) + "</th>"
+        for user in users:
+            table += "<td>"
+            if user.displayName() not in user_attendance:
+                table += "</td>"
+                continue
+            table += timeFormat(user_attendance[user.displayName()])
+            table += "</td>"
+        table += "</tr>"
+
+    return templates.TemplateResponse(
+        request, "time_table.html", context={"tableBody": table}
+    )
+
+
 @app.get("/admin/time")
 @requires("admin", redirect="login")
 def time_table(request: Request, session: SessionDep):
