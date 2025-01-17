@@ -443,9 +443,8 @@ def round_down_to_week_start(dt):
     return start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
-@app.get("/admin/time/weeks")
-@requires("admin", redirect="login")
-def time_table(request: Request, session: SessionDep):
+def make_week_time_table(session: SessionDep, fmt: str) -> str:
+    csv = fmt == "csv"
     attendance = session.exec(
         select(Attendance, User)
         .join(User, User.user == Attendance.user)
@@ -478,10 +477,17 @@ def time_table(request: Request, session: SessionDep):
             atnd.startedAt, atnd.endedAt or datetime.now()
         )
 
-    table += "<tr>"
-    table += '<th scope="col">Week</th>'
+    if csv:
+        table += "week"
+    else:
+        table += "<tr>"
+        table += '<th scope="col">Week</th>'
     for user in users:
-        table += '<th scope="col">' + user.name + "</th>"
+        if csv:
+            table += f',"{user.name.replace('"', '""')}"'
+        else:
+            table += '<th scope="col">' + user.name + "</th>"
+    table += "\n" if csv else "</tr>\n"
     for week, week_items in weeks:
         user_attendance = {}
         for user, tl in sorted(user_timelines.items(), key=lambda v: v[0]):
@@ -492,20 +498,44 @@ def time_table(request: Request, session: SessionDep):
 
             user_attendance[user] = week_total
 
-        table += "<tr>"
-        # week column
-        table += '<th scope="row">' + weekFormat(week) + "</th>"
+        if csv:
+            table += weekFormat(week)
+        else:
+            table += "<tr>"
+            # week column
+            table += '<th scope="row">' + weekFormat(week) + "</th>"
         for user in users:
-            table += "<td>"
+            table += "," if csv else "<td>"
             if user.displayName() not in user_attendance:
-                table += "</td>"
+                table += "" if csv else "</td>"
                 continue
             table += timeFormat(user_attendance[user.displayName()])
-            table += "</td>"
-        table += "</tr>"
+            table += "" if csv else "</td>"
+        table += "\n" if csv else "</tr>"
+    return table
+
+
+@app.get("/admin/time/weeks")
+@requires("admin", redirect="login")
+def time_table_week(request: Request, session: SessionDep):
+    table = make_week_time_table(session, "html")
 
     return templates.TemplateResponse(
         request, "time_table.html", context={"tableBody": table}
+    )
+
+
+@app.get("/admin/time/weeks/csv")
+@requires("admin", redirect="login")
+def time_table_week_csv(request: Request, session: SessionDep):
+    table = make_week_time_table(session, "csv")
+
+    export_media_type = "text/csv"
+    export_headers = {
+        "Content-Disposition": "attachment; filename=mars-attendance-weekly.csv"
+    }
+    return StreamingResponse(
+        table, headers=export_headers, media_type=export_media_type
     )
 
 
