@@ -340,26 +340,29 @@ def data(request: Request, session: SessionDep):
 
 class EntryUpdate(BaseModel):
     id: int
-    startedAt: str
-    endedAt: str
+    startedAt: Optional[str] = None
+    endedAt: Optional[str] = None
 
 
 @app.post("/api/entries/update")
 @requires("admin")
 def update_entires(request: Request, update: EntryUpdate, session: SessionDep):
+    # if update.startedAt is None:
+    if update.endedAt is not None:
+        endedAt = datetime.fromisoformat(update.endedAt).replace(tzinfo=None)
+    else:
+        endedAt = None
+
     startedAt = datetime.fromisoformat(update.startedAt).replace(tzinfo=None)
-    endedAt = datetime.fromisoformat(update.endedAt).replace(tzinfo=None)
 
     entry = session.exec(select(Attendance).where(Attendance.id == update.id)).first()
     if entry is None:
         print(f"no entry found for id {update.id}")
         return
     
-    print("old entry",entry)
     entry.startedAt = startedAt
     entry.endedAt = endedAt
 
-    print("new entry",entry)
     session.add(entry)
     session.commit()
 

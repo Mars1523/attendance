@@ -53,8 +53,8 @@
             let id = parseInt(tr.dataset["id"])
             let body = {
                 id: id,
-                startedAt: tr.querySelector('input[name="startedAt"]').valueAsDate,
-                endedAt: tr.querySelector('input[name="endedAt"]').valueAsDate,
+                startedAt: tr.querySelector('input[name="startedAt"]')?.valueAsDate,
+                endedAt: tr.querySelector('input[name="endedAt"]')?.valueAsDate,
             }
             await fetch("/api/entries/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
             location.reload()
@@ -68,7 +68,6 @@
             }
             await fetch("/api/entries/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
             location.reload()
-
         }
     </script>
 </body>
