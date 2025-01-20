@@ -524,7 +524,12 @@ def time_table_week(request: Request, session: SessionDep):
     table = make_week_time_table(session, "html")
 
     return templates.TemplateResponse(
-        request, "time_table.html", context={"tableBody": table}
+        request,
+        "time_table.html",
+        context={
+            "tableBody": table,
+            "bodyHeader": '<a type="button" class="btn btn-outline-primary" href="/admin/time/weeks/csv">Download as CSV</a>',
+        },
     )
 
 
