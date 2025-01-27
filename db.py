@@ -30,6 +30,7 @@ class Attendance(SQLModel, table=True):
     user: int = Field(index=True)
     startedAt: datetime = Field(default_factory=datetime.now)
     endedAt: datetime | None = Field(index=True)
+    info: str | None =Field(default=None)
 
 
 sqlite_file_name = "database.db"
