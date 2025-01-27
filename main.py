@@ -425,7 +425,7 @@ def data(request: Request, session: SessionDep):
     groups_by_day = itertools.groupby(attendance, lambda v: dayFormat(v[0].startedAt))
 
     for day, day_items in groups_by_day:
-        table += '<th colspan="5">' + day + "</th>"
+        table += '<th colspan="6">' + day + "</th>"
         for atnd, user in day_items:
             table += '<tr data-id="' + str(atnd.id) + '">'
             table += "<td>"
@@ -450,6 +450,7 @@ def data(request: Request, session: SessionDep):
                 )
             else:
                 table += "None"
+            table += f"<td>{atnd.info or ""}</td>"
             table += "</td>"
             table += "<td>"
             table += '<button type="button" class="btn btn-outline-primary" onclick="updateEntry(this)">Update</button>'
