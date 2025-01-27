@@ -272,6 +272,13 @@ def read_items(session: SessionDep, userid_s: str):
 #     return "\n".join(map(lambda u: f"<li>{u.user}</li>", users))
 
 
+@app.get("/api/users")
+@requires("authenticated")
+def all_users(request: Request, session: SessionDep):
+    users = session.exec(select(User)).all()
+    return users
+
+
 @app.post("/users/submit")
 @requires("authenticated", redirect="login")
 def submit_userid(
@@ -367,6 +374,24 @@ def update_entires(request: Request, update: EntryUpdate, session: SessionDep):
     session.commit()
 
     return "ok"
+
+class EntryCreate(BaseModel):
+    userid: int
+    startedAt: datetime
+    endedAt: Optional[datetime] = None
+
+@app.post("/api/entries/create")
+@requires("admin")
+def update_entires(request: Request, update: Annotated[EntryCreate, Form()], session: SessionDep):
+    user = session.exec(select(User).where(User.user == update.userid)).first()
+
+    entry = Attendance(user=update.userid, startedAt=update.startedAt,endedAt=update.endedAt)
+    session.add(entry)
+    session.commit()
+
+    flash(request, f"Created time record for `{user.displayName()}`", "success")
+    return RedirectResponse(request.headers.get("referer"), 303)
+
 
 @app.post("/api/entries/delete")
 @requires("admin")

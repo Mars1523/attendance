@@ -30,6 +30,14 @@
     <main>
         <div class="container">
             <div class="container">
+                {% include 'flashed_messages.frag.html' %}
+                <form action="/api/entries/create" method="post">
+                    <label>UserID
+                    <input id="add-user" id="add-user" name="userid"/></label>
+                    <input id="add-start" name="startedAt" type="datetime-local" value="">
+                    <input id="add-end" name="endedAt" type="datetime-local" value="">
+                    <button type="submit" class="btn btn-outline-success">Add time</button>
+                </form>
                 <table>
                     <thead>
                         <tr>
@@ -43,11 +51,33 @@
                     </tbody>
                 </table>
             </div>
-            {% include 'flashed_messages.frag.html' %}
         </div>
     </main>
 
     <script>
+        function toDateInputValue(dateObject){
+            const local = new Date(dateObject);
+            local.setMinutes(dateObject.getMinutes() - dateObject.getTimezoneOffset());
+            return local.toJSON().slice(0,19);
+        };
+
+        let now = new Date();
+        now.setMilliseconds(0)
+        now.setSeconds(0)
+        document.getElementById('add-start').value = toDateInputValue(now)
+        document.getElementById('add-end').value = toDateInputValue(now)
+
+        // async function updateUserList() {
+        //     let usersReq = await fetch("/api/users")
+        //     let json = await usersReq.json()
+        //     let usersEl = document.getElementById("users")
+        //     for (let name of json.map(u=>u.name)) {
+        //         // usersEl.appendChild(`<option value="${name}"></option>`)
+        //         usersEl.appendChild(new Option("", name))
+        //     }
+        // }
+        // document.onload = updateUserList
+
         async function updateEntry(element) {
             let tr = element.parentElement.parentElement
             let id = parseInt(tr.dataset["id"])
