@@ -16,6 +16,7 @@ from fastapi.responses import (
     StreamingResponse,
 )
 from pydantic import BaseModel
+import requests
 from sqlalchemy import func, text
 from sqlmodel import or_, select
 from fastapi.templating import Jinja2Templates
@@ -675,3 +676,20 @@ def clockout_all(
     session.commit()
     flash(request, f"Clocked out {len(sessions)} users", "success")
     return RedirectResponse("/admin", 303)
+
+
+@app.post("/api/fans/on")
+@requires("authenticated")
+def fans_on(request: Request):
+    print("fans on")
+    requests.post("http://shellyplugus-a0dd6c4a6344.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
+    requests.post("http://shellyplugus-a0dd6c27dc58.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
+    return RedirectResponse(request.headers.get("referer"), 303)
+
+@app.post("/api/fans/off")
+@requires("authenticated")
+def fans_on(request: Request):
+    print("fans off")
+    requests.post("http://shellyplugus-a0dd6c4a6344.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
+    requests.post("http://shellyplugus-a0dd6c27dc58.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
+    return RedirectResponse(request.headers.get("referer"), 303)

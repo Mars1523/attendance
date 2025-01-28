@@ -60,6 +60,15 @@
                             <p>Your userid is displayed next to your name</p>
                         </li>
                     </ul>
+                    <div class="d-flex justify-content-center">
+                        <form action="/api/fans/on" method="post">
+                            <!-- <input type="submit" name="upvote" value="Upvote" /> -->
+                            <button type="submit" class="btn btn-outline-success">Fans On</button>
+                        </form>
+                        <form action="/api/fans/off" method="post">
+                            <button type="submit" class="btn btn-outline-danger">Fans Off</button>
+                        </form>
+                    </div>
                 </div>
             </div>
 
