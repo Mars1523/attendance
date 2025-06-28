@@ -682,14 +682,24 @@ def clockout_all(
 @requires("authenticated")
 def fans_on(request: Request):
     print("fans on")
+    # programming
     requests.post("http://shellyplugus-a0dd6c4a6344.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
     requests.post("http://shellyplugus-a0dd6c27dc58.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
+
+    # construction
+    requests.post("http://shellyplugus-3c8a1fece8f8.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
+    requests.post("http://shellyplugus-d8132ad47a40.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
     return RedirectResponse(request.headers.get("referer"), 303)
 
 @app.post("/api/fans/off")
 @requires("authenticated")
 def fans_on(request: Request):
     print("fans off")
+    # programming
     requests.post("http://shellyplugus-a0dd6c4a6344.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
     requests.post("http://shellyplugus-a0dd6c27dc58.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
+
+    # construction
+    requests.post("http://shellyplugus-3c8a1fece8f8.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
+    requests.post("http://shellyplugus-d8132ad47a40.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
     return RedirectResponse(request.headers.get("referer"), 303)
