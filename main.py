@@ -688,7 +688,12 @@ def fans_on(request: Request):
 
     # construction
     requests.post("http://shellyplugus-3c8a1fece8f8.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
-    requests.post("http://shellyplugus-d8132ad47a40.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
+    requests.post("http://shellyplugus-3c8a1fecb8e4.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
+
+    # wifi
+    requests.post("http://shellyplugus-3c8a1fecafa0.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
+
+    # wifi 
     return RedirectResponse(request.headers.get("referer"), 303)
 
 @app.post("/api/fans/off")
@@ -701,5 +706,8 @@ def fans_on(request: Request):
 
     # construction
     requests.post("http://shellyplugus-3c8a1fece8f8.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
-    requests.post("http://shellyplugus-d8132ad47a40.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
+    requests.post("http://shellyplugus-3c8a1fecb8e4.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
+
+    # wifi
+    requests.post("http://shellyplugus-3c8a1fecafa0.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
     return RedirectResponse(request.headers.get("referer"), 303)
