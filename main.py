@@ -708,6 +708,7 @@ def fans_on(request: Request):
     requests.post("http://shellyplugus-3c8a1fece8f8.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
     requests.post("http://shellyplugus-3c8a1fecb8e4.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
 
-    # wifi
+    # Robot Wifi
     requests.post("http://shellyplugus-3c8a1fecafa0.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
+
     return RedirectResponse(request.headers.get("referer"), 303)
