@@ -682,33 +682,60 @@ def clockout_all(
 @requires("authenticated")
 def fans_on(request: Request):
     print("fans on")
-    # programming
-    requests.post("http://shellyplugus-a0dd6c4a6344.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
-    requests.post("http://shellyplugus-a0dd6c27dc58.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
+    failed_categories = []
+    
+    # Programming Fans
+    try:
+        requests.post("http://shellyplugus-a0dd6c4a6344.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}}, timeout=5)
+        requests.post("http://shellyplugus-a0dd6c27dc58.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}}, timeout=5)
+    except Exception:
+        failed_categories.append("Programming Fans")
 
-    # construction
-    requests.post("http://shellyplugus-3c8a1fece8f8.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
-    requests.post("http://shellyplugus-3c8a1fecb8e4.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
+    # Construction Fans
+    try:
+        requests.post("http://shellyplugus-3c8a1fece8f8.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}}, timeout=5)
+        requests.post("http://shellyplugus-3c8a1fecb8e4.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}}, timeout=5)
+    except Exception:
+        failed_categories.append("Construction Fans")
 
-    # wifi
-    requests.post("http://shellyplugus-3c8a1fecafa0.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}})
+    # Robot Wifi
+    try:
+        requests.post("http://shellyplugus-3c8a1fecafa0.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}}, timeout=5)
+    except Exception:
+        failed_categories.append("Robot Wifi")
+    
+    if failed_categories:
+        flash(request, f"Failed to control: {', '.join(failed_categories)}", "warning")
 
-    # wifi 
     return RedirectResponse(request.headers.get("referer"), 303)
 
 @app.post("/api/fans/off")
 @requires("authenticated")
 def fans_on(request: Request):
     print("fans off")
-    # programming
-    requests.post("http://shellyplugus-a0dd6c4a6344.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
-    requests.post("http://shellyplugus-a0dd6c27dc58.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
+    failed_categories = []
+    
+    # Programming Fans
+    try:
+        requests.post("http://shellyplugus-a0dd6c4a6344.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}}, timeout=5)
+        requests.post("http://shellyplugus-a0dd6c27dc58.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}}, timeout=5)
+    except Exception:
+        failed_categories.append("Programming Fans")
 
-    # construction
-    requests.post("http://shellyplugus-3c8a1fece8f8.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
-    requests.post("http://shellyplugus-3c8a1fecb8e4.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
+    # Construction Fans
+    try:
+        requests.post("http://shellyplugus-3c8a1fece8f8.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}}, timeout=5)
+        requests.post("http://shellyplugus-3c8a1fecb8e4.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}}, timeout=5)
+    except Exception:
+        failed_categories.append("Construction Fans")
 
     # Robot Wifi
-    requests.post("http://shellyplugus-3c8a1fecafa0.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}})
+    try:
+        requests.post("http://shellyplugus-3c8a1fecafa0.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}}, timeout=5)
+    except Exception:
+        failed_categories.append("Robot Wifi")
+    
+    if failed_categories:
+        flash(request, f"Failed to control: {', '.join(failed_categories)}", "warning")
 
     return RedirectResponse(request.headers.get("referer"), 303)
