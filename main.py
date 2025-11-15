@@ -41,6 +41,12 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET")
 if SECRET_KEY is None:
     raise Exception("SECRET env var must be set. use .env file")
+HA_TOKEN = os.getenv("HA_TOKEN")
+if SECRET_KEY is None:
+    raise Exception("HA_TOKEN env var must be set. use .env file")
+HA_URL = os.getenv("HA_URL")
+if HA_URL is None:
+    raise Exception("HA_URL env var must be set. use .env file")
 
 
 def flash(request: Request, message: typing.Any, category: typing.Any):
@@ -682,60 +688,30 @@ def clockout_all(
 @requires("authenticated")
 def fans_on(request: Request):
     print("fans on")
-    failed_categories = []
     
-    # Programming Fans
-    try:
-        requests.post("http://shellyplugus-a0dd6c4a6344.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}}, timeout=5)
-        requests.post("http://shellyplugus-a0dd6c27dc58.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}}, timeout=5)
-    except Exception:
-        failed_categories.append("Programming Fans")
+    url = f"{HA_URL}/api/services/switch/turn_on"
+    headers = {"Authorization": f"Bearer {HA_TOKEN}"}
+    data = {"entity_id": "switch.all_automatic_outlets"}
 
-    # Construction Fans
-    try:
-        requests.post("http://shellyplugus-3c8a1fece8f8.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}}, timeout=5)
-        requests.post("http://shellyplugus-3c8a1fecb8e4.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}}, timeout=5)
-    except Exception:
-        failed_categories.append("Construction Fans")
-
-    # Robot Wifi
-    try:
-        requests.post("http://shellyplugus-3c8a1fecafa0.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":True}}, timeout=5)
-    except Exception:
-        failed_categories.append("Robot Wifi")
-    
-    if failed_categories:
-        flash(request, f"Failed to control: {', '.join(failed_categories)}", "warning")
+    response = requests.post(url, headers=headers, json=data)
+    print(response.text)
+    if not response.ok:
+        flash(request, f"Failed to turn on fans: {response.status_code}", "error")
 
     return RedirectResponse(request.headers.get("referer"), 303)
 
 @app.post("/api/fans/off")
 @requires("authenticated")
-def fans_on(request: Request):
+def fans_off(request: Request):
     print("fans off")
-    failed_categories = []
     
-    # Programming Fans
-    try:
-        requests.post("http://shellyplugus-a0dd6c4a6344.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}}, timeout=5)
-        requests.post("http://shellyplugus-a0dd6c27dc58.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}}, timeout=5)
-    except Exception:
-        failed_categories.append("Programming Fans")
+    url = f"{HA_URL}/api/services/switch/turn_off"
+    headers = {"Authorization": f"Bearer {HA_TOKEN}"}
+    data = {"entity_id": "switch.all_automatic_outlets"}
 
-    # Construction Fans
-    try:
-        requests.post("http://shellyplugus-3c8a1fece8f8.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}}, timeout=5)
-        requests.post("http://shellyplugus-3c8a1fecb8e4.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}}, timeout=5)
-    except Exception:
-        failed_categories.append("Construction Fans")
-
-    # Robot Wifi
-    try:
-        requests.post("http://shellyplugus-3c8a1fecafa0.local/rpc", json={"id":0,"method":"Switch.Set","params":{"id":0,"on":False}}, timeout=5)
-    except Exception:
-        failed_categories.append("Robot Wifi")
-    
-    if failed_categories:
-        flash(request, f"Failed to control: {', '.join(failed_categories)}", "warning")
+    response = requests.post(url, headers=headers, json=data)
+    print(response.text)
+    if not response.ok:
+        flash(request, f"Failed to turn off fans: {response.status_code}", "error")
 
     return RedirectResponse(request.headers.get("referer"), 303)
