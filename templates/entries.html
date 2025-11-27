@@ -64,7 +64,7 @@
                             <th scope="col">Started At</th>
                             <th scope="col">Ended At</th>
                             <th scope="col">Info</th>
-                            <th scope="col" colspan="2">Actions</th>
+                            <th scope="col" colspan="3">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -118,6 +118,18 @@
                 id: id,
             }
             await fetch("/api/entries/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+            location.reload()
+        }
+
+        async function clearEndEntry(element) {
+            let tr = element.parentElement.parentElement
+            let id = parseInt(tr.dataset["id"]) 
+            let body = {
+                id: id,
+                startedAt: tr.querySelector('input[name="startedAt"]')?.value,
+                endedAt: null,
+            }
+            await fetch("/api/entries/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
             location.reload()
         }
     </script>

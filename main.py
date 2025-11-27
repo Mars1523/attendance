@@ -503,6 +503,7 @@ def data(request: Request, session: SessionDep, year: Optional[int] = None):
                     + datetimeToHtml(atnd.endedAt)
                     + '">'
                 )
+                table += '<button type="button" class="btn btn-sm btn-outline-danger ms-1" onclick="clearEndEntry(this)" title="Clear end time">✕</button>'
             else:
                 table += "None"
             table += f"<td>{atnd.info or ""}</td>"
