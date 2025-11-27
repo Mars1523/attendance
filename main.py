@@ -7,6 +7,8 @@ from typing import Annotated, Dict, List, Optional
 import typing
 import os
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 from fastapi import Body, FastAPI, Form, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import (
@@ -37,6 +39,31 @@ from datetime import datetime, date, time, timedelta
 from timeline import Timeline
 
 load_dotenv()
+
+scheduler = BackgroundScheduler()
+
+
+def auto_clockout():
+    """Clock out all users who are still clocked in.
+    
+    Sets end time to 17:00 on weekends, 20:00 on weekdays.
+    """
+    with Session(engine) as session:
+        open_sessions = session.exec(
+            select(Attendance).where(Attendance.endedAt.is_(None))
+        ).all()
+        
+        for ses in open_sessions:
+            started_date = ses.startedAt.date()
+            is_weekend = started_date.weekday() >= 5  # Saturday=5, Sunday=6
+            clockout_hour = 17 if is_weekend else 20
+            ses.endedAt = datetime.combine(started_date, time(hour=clockout_hour, minute=0))
+            ses.info = "auto-clockout"
+            session.add(ses)
+        
+        session.commit()
+        if len(open_sessions) > 0:
+            print(f"[auto-clockout] Clocked out {len(open_sessions)} users")
 
 SECRET_KEY = os.getenv("SECRET")
 if SECRET_KEY is None:
@@ -71,7 +98,15 @@ middleware = [
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    scheduler.add_job(
+        auto_clockout,
+        CronTrigger(hour=0, minute=0),  # Run at midnight
+        id="auto_clockout",
+        replace_existing=True,
+    )
+    scheduler.start()
     yield
+    scheduler.shutdown()
 
 
 app = FastAPI(lifespan=lifespan, middleware=middleware)
