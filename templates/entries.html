@@ -38,6 +38,18 @@
         <div class="container">
             <div class="container">
                 {% include 'flashed_messages.frag.html' %}
+                
+                <nav class="mb-3">
+                    <span class="me-2">Year:</span>
+                    {% for year in available_years %}
+                        {% if year == current_year %}
+                            <strong class="me-2">{{ year }}</strong>
+                        {% else %}
+                            <a href="?year={{ year }}" class="me-2">{{ year }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </nav>
+
                 <form action="/api/entries/create" method="post">
                     <label>UserID
                     <input id="add-user" id="add-user" name="userid"/></label>

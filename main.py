@@ -417,11 +417,24 @@ def update_entires(request: Request, id: Annotated[int, Body(embed=True)], sessi
 
 @app.get("/admin/entries")
 @requires("admin", redirect="login")
-def data(request: Request, session: SessionDep):
+def data(request: Request, session: SessionDep, year: Optional[int] = None):
+    if year is None:
+        year = datetime.now().year
+    
+    year_start = datetime(year=year, month=1, day=1)
+    year_end = datetime(year=year + 1, month=1, day=1)
+    
     attendance = session.exec(
         select(Attendance, User)
         .join(User, User.user == Attendance.user)
+        .where(Attendance.startedAt >= year_start)
+        .where(Attendance.startedAt < year_end)
         .order_by(Attendance.startedAt.desc())
+    ).all()
+    
+    available_years = session.exec(
+        select(func.distinct(func.strftime('%Y', Attendance.startedAt)))
+        .order_by(func.strftime('%Y', Attendance.startedAt).desc())
     ).all()
 
     datetimeToHtml = lambda dt: dt.strftime("%Y-%m-%d %H:%M")
@@ -468,7 +481,11 @@ def data(request: Request, session: SessionDep):
             table += "</tr>"
 
     return templates.TemplateResponse(
-        request, "entries.html", context={"tableBody": table}
+        request, "entries.html", context={
+            "tableBody": table,
+            "current_year": year,
+            "available_years": [int(y) for y in available_years if y],
+        }
     )
 
 
@@ -479,12 +496,17 @@ def round_down_to_week_start(dt):
     return start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
-def make_week_time_table(session: SessionDep, fmt: str) -> str:
+def make_week_time_table(session: SessionDep, fmt: str, year: int) -> str:
     csv = fmt == "csv"
+    year_start = datetime(year=year, month=1, day=1)
+    year_end = datetime(year=year + 1, month=1, day=1)
+    
     attendance = session.exec(
         select(Attendance, User)
         .join(User, User.user == Attendance.user)
         .where(Attendance.endedAt.isnot(None))
+        .where(Attendance.startedAt >= year_start)
+        .where(Attendance.startedAt < year_end)
         .order_by(Attendance.startedAt.desc())
     ).all()
     users = session.exec(
@@ -553,23 +575,36 @@ def make_week_time_table(session: SessionDep, fmt: str) -> str:
 
 @app.get("/admin/time/weeks")
 @requires("admin", redirect="login")
-def time_table_week(request: Request, session: SessionDep):
-    table = make_week_time_table(session, "html")
+def time_table_week(request: Request, session: SessionDep, year: Optional[int] = None):
+    if year is None:
+        year = datetime.now().year
+    
+    table = make_week_time_table(session, "html", year)
+    
+    available_years = session.exec(
+        select(func.distinct(func.strftime('%Y', Attendance.startedAt)))
+        .order_by(func.strftime('%Y', Attendance.startedAt).desc())
+    ).all()
 
     return templates.TemplateResponse(
         request,
         "time_table.html",
         context={
             "tableBody": table,
-            "bodyHeader": '<a type="button" class="btn btn-outline-primary" href="/admin/time/weeks/csv">Download as CSV</a>',
+            "bodyHeader": f'<a type="button" class="btn btn-outline-primary" href="/admin/time/weeks/csv?year={year}">Download as CSV</a>',
+            "current_year": year,
+            "available_years": [int(y) for y in available_years if y],
         },
     )
 
 
 @app.get("/admin/time/weeks/csv")
 @requires("admin", redirect="login")
-def time_table_week_csv(request: Request, session: SessionDep):
-    table = make_week_time_table(session, "csv")
+def time_table_week_csv(request: Request, session: SessionDep, year: Optional[int] = None):
+    if year is None:
+        year = datetime.now().year
+    
+    table = make_week_time_table(session, "csv", year)
 
     export_media_type = "text/csv"
     export_headers = {
@@ -582,12 +617,24 @@ def time_table_week_csv(request: Request, session: SessionDep):
 
 @app.get("/admin/time")
 @requires("admin", redirect="login")
-def time_table(request: Request, session: SessionDep):
+def time_table(request: Request, session: SessionDep, year: Optional[int] = None):
+    if year is None:
+        year = datetime.now().year
+    
+    year_start = datetime(year=year, month=1, day=1)
+    year_end = datetime(year=year + 1, month=1, day=1)
+    
     attendance = session.exec(
         select(Attendance, User)
         .join(User, User.user == Attendance.user)
-        # .where(Attendance.endedAt.isnot(None))
+        .where(Attendance.startedAt >= year_start)
+        .where(Attendance.startedAt < year_end)
         .order_by(Attendance.startedAt.desc())
+    ).all()
+    
+    available_years = session.exec(
+        select(func.distinct(func.strftime('%Y', Attendance.startedAt)))
+        .order_by(func.strftime('%Y', Attendance.startedAt).desc())
     ).all()
 
     table = ""
@@ -608,10 +655,10 @@ def time_table(request: Request, session: SessionDep):
     for atnd, user in attendance:
         user_timelines[user.displayName()].add(atnd.startedAt, atnd.endedAt or datetime.now())
     
-    year = datetime(year=datetime.now().year, month=1, day=1)
-    end_of_year = datetime(year=datetime.now().year + 1, month=1, day=1) - timedelta(
-        microseconds=1
-    )
+    year_dt = datetime(year=year, month=1, day=1)
+    # end_of_year = datetime(year=year + 1, month=1, day=1) - timedelta(
+    #     microseconds=1
+    # )
 
     for week, week_items in weeks:
         end_of_week = week + timedelta(days=7) - timedelta(microseconds=1)
@@ -629,7 +676,7 @@ def time_table(request: Request, session: SessionDep):
                 start=timedelta(),
             )
             year_total = sum(
-                map(lambda s: s.end - s.start, tl.slice_between_cc(year, end_of_week)),
+                map(lambda s: s.end - s.start, tl.slice_between_cc(year_dt, end_of_week)),
                 start=timedelta(),
             )
 
@@ -656,7 +703,11 @@ def time_table(request: Request, session: SessionDep):
             table += "</tr>"
 
     return templates.TemplateResponse(
-        request, "time_table.html", context={"tableBody": table}
+        request, "time_table.html", context={
+            "tableBody": table,
+            "current_year": year,
+            "available_years": [int(y) for y in available_years if y],
+        }
     )
 
 
