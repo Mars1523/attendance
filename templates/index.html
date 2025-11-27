@@ -142,6 +142,10 @@
             document.getElementById("userid").focus()
         }
         window.onkeydown = inputFocus;
+
+        setInterval(() => {
+            window.location.reload();
+        }, 60 * 60 * 1000);
     </script>
 </body>
 
