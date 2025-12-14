@@ -226,6 +226,20 @@ def users_raw_text(session: SessionDep):
     return out.getvalue()
 
 
+@app.get("/admin/users/print", response_class=HTMLResponse)
+@requires("admin", redirect="login")
+def users_print(request: Request, session: SessionDep):
+    users = session.exec(
+        select(User)
+        .outerjoin(AuthUser, User.user == AuthUser.user)
+        .where(AuthUser.user == None)
+        .order_by(User.name)
+    ).all()
+    return templates.TemplateResponse(
+        request=request, name="users_print.html", context={"users": users}
+    )
+
+
 @app.get("/admin/users/edit", response_class=HTMLResponse)
 @requires("admin", redirect="login")
 def users_edit(request: Request, session: SessionDep):

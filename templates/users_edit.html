@@ -16,6 +16,12 @@
         <div class="container">
             {% include 'flashed_messages.frag.html' %}
 
+            <div class="mb-3">
+                <a href="/admin/users/print" target="_blank" class="btn btn-outline-secondary">
+                    <i class="bi bi-printer"></i> Print User List
+                </a>
+            </div>
+
             <form action="/api/users/create" method="post" class="mb-3 row g-2 align-items-end">
                 <div class="col-auto">
                     <label for="add-user-id" class="form-label">User ID</label>

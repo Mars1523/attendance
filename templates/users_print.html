@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARS Attendance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            padding: 0.5in;
+        }
+        h1 {
+            font-size: 18pt;
+            margin-bottom: 0.1in;
+            text-align: center;
+            font-weight: bold;
+        }
+        table {
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+        th {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-bottom: 1px solid #333;
+        }
+        th:first-child, td:first-child {
+            text-align: left;
+        }
+        th:last-child, td:last-child {
+            text-align: right;
+        }
+        td {
+            padding: 4px 8px;
+        }
+        @media print {
+            body {
+                padding: 0in;
+            }
+            @page {
+                size: letter portrait;
+                margin: 0;
+            }
+        }
+        .no-print {
+            margin-bottom: 0.25in;
+            text-align: center;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="no-print">
+        <button onclick="window.print()">Print</button>
+        <button onclick="window.close()">Close</button>
+        <span style="margin-left: 20px;">
+            Font: 
+            <button onclick="adjustFontSize(-1)">−</button>
+            <button onclick="adjustFontSize(1)">+</button>
+        </span>
+        <span style="margin-left: 20px;">
+            Padding: 
+            <button onclick="adjustPadding(-1)">−</button>
+            <button onclick="adjustPadding(1)">+</button>
+        </span>
+    </div>
+
+    <script>
+        let fontSize = 12;
+        let padding = 4;
+
+        function adjustFontSize(delta) {
+            fontSize = Math.max(8, Math.min(24, fontSize + delta));
+            document.body.style.fontSize = fontSize + 'pt';
+        }
+
+        function adjustPadding(delta) {
+            padding = Math.max(0, Math.min(16, padding + delta));
+            document.querySelectorAll('td, th').forEach(el => {
+                el.style.padding = padding + 'px 8px';
+            });
+        }
+    </script>
+    
+    <h1>MARS Attendance</h1>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Login Number</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.name }}</td>
+                <td>{{ user.user }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+
+</html>
