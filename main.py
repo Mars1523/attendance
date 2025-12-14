@@ -199,41 +199,7 @@ def index(request: Request, session: SessionDep):
     )
 
 
-@app.get("/admin/users", response_class=HTMLResponse)
-@requires("admin", redirect="login")
-def users(request: Request, session: SessionDep):
-    users = session.exec(
-        select(User, AuthUser)
-        .outerjoin(AuthUser, User.user == AuthUser.user, full=True)
-        .order_by(User.user)
-    ).all()
-    def merge(u):
-        u,a=u
-        user_info = (
-            {
-                "user": a.user,
-                "name": "<No User Entry for AuthUser>",
-            }
-            if u is None
-            else {
-                "user": u.user,
-                "name": u.name,
-            }
-        )
-        auth_info = (
-            {}
-            if a is None
-            else {
-                "password": a.password,
-                "scopes": a.scopes,
-            }
-        )
 
-        return user_info | auth_info
-    users = list(map(merge, users))
-    return templates.TemplateResponse(
-        request=request, name="users.html", context={"users": users}
-    )
 
 def users_raw_text(session: SessionDep):
     users = session.exec(
@@ -263,30 +229,30 @@ def users_raw_text(session: SessionDep):
 @app.get("/admin/users/edit", response_class=HTMLResponse)
 @requires("admin", redirect="login")
 def users_edit(request: Request, session: SessionDep):
-    users = users_raw_text(session)
+    rows = session.exec(
+        select(User, AuthUser)
+        .outerjoin(AuthUser, User.user == AuthUser.user, full=True)
+        .order_by(User.user)
+    ).all()
+    
+    def merge(u):
+        u, a = u
+        user_info = (
+            {"user": a.user, "name": "<No User Entry for AuthUser>"}
+            if u is None
+            else {"user": u.user, "name": u.name}
+        )
+        auth_info = (
+            {}
+            if a is None
+            else {"password": a.password, "scopes": a.scopes}
+        )
+        return user_info | auth_info
+    
+    users = list(map(merge, rows))
     return templates.TemplateResponse(
         request=request, name="users_edit.html", context={"users": users}
     )
-
-
-@app.post("/admin/users/edit/update", response_class=HTMLResponse)
-@requires("admin", redirect="login")
-def users_edit_update(data: Annotated[str, Form()], request: Request, session: SessionDep):
-    data = filter(lambda l:not l.startswith("#"),data.splitlines())
-    users_reader = csv.reader(data,delimiter="|")
-    users = []
-    for user in users_reader:
-        id = user[0]
-        name = user[1]
-        # scopes = user[2] if len(user) > 2 else ""
-        users.append(User(user=id,name=name))
-
-    for user in users:
-        print(session.merge(user))
-    session.commit()
-
-    flash(request, f"Updated", "success")
-    return RedirectResponse("/admin/users/edit", 303)
 
 @app.get("/admin", response_class=HTMLResponse)
 @requires("admin", redirect="login")
@@ -421,6 +387,20 @@ class EntryCreate(BaseModel):
     userid: int
     startedAt: datetime
     endedAt: Optional[datetime] = None
+
+
+class UserCreate(BaseModel):
+    user: int
+    name: str
+
+
+class UserUpdate(BaseModel):
+    user: int
+    name: str
+
+
+class UserDelete(BaseModel):
+    user: int
 
 @app.post("/api/entries/create")
 @requires("admin")
@@ -769,6 +749,51 @@ def clockout_all(
     session.commit()
     flash(request, f"Clocked out {len(sessions)} users", "success")
     return RedirectResponse("/admin", 303)
+
+
+@app.post("/api/users/create")
+@requires("admin")
+def create_user(request: Request, data: Annotated[UserCreate, Form()], session: SessionDep):
+    existing = session.get(User, data.user)
+    if existing:
+        flash(request, f"User ID {data.user} already exists", "danger")
+        return RedirectResponse("/admin/users/edit", 303)
+    
+    user = User(user=data.user, name=data.name)
+    session.add(user)
+    session.commit()
+    
+    flash(request, f"Created user {user.displayName()}", "success")
+    return RedirectResponse("/admin/users/edit", 303)
+
+
+@app.post("/api/users/update")
+@requires("admin")
+def update_user(request: Request, data: UserUpdate, session: SessionDep):
+    user = session.get(User, data.user)
+    if user is None:
+        return PlainTextResponse("User not found", status_code=404)
+    
+    user.name = data.name
+    session.add(user)
+    session.commit()
+    
+    return PlainTextResponse("ok")
+
+
+@app.post("/api/users/delete")
+@requires("admin")
+def delete_user(request: Request, data: UserDelete, session: SessionDep):
+    auth_users = session.exec(select(AuthUser).where(AuthUser.user == data.user)).all()
+    for auth in auth_users:
+        session.delete(auth)
+    
+    user = session.get(User, data.user)
+    if user:
+        session.delete(user)
+    
+    session.commit()
+    return PlainTextResponse("ok")
 
 
 @app.post("/api/fans/on")
