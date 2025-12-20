@@ -231,7 +231,8 @@ def users_raw_text(session: SessionDep):
 def users_print(request: Request, session: SessionDep):
     users = session.exec(
         select(User)
-        .outerjoin(AuthUser, User.user == AuthUser.user)
+        .where(User.active == True)
+        .outerjoin(AuthUser, User.user == AuthUser.user, full=True)
         .where(AuthUser.user == None)
         .order_by(User.name)
     ).all()
@@ -252,9 +253,9 @@ def users_edit(request: Request, session: SessionDep):
     def merge(u):
         u, a = u
         user_info = (
-            {"user": a.user, "name": "<No User Entry for AuthUser>"}
+            {"user": a.user, "name": "<No User Entry for AuthUser>", "active": False}
             if u is None
-            else {"user": u.user, "name": u.name}
+            else {"user": u.user, "name": u.name, "active": u.active}
         )
         auth_info = (
             {}
@@ -411,6 +412,7 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     user: int
     name: str
+    active: bool
 
 
 class UserDelete(BaseModel):
@@ -789,6 +791,7 @@ def update_user(request: Request, data: UserUpdate, session: SessionDep):
         return PlainTextResponse("User not found", status_code=404)
     
     user.name = data.name
+    user.active = data.active
     session.add(user)
     session.commit()
     

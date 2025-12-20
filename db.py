@@ -9,6 +9,7 @@ from sqlmodel import Field, SQLModel, Session
 class User(SQLModel, table=True):
     user: int = Field(default=None, primary_key=True)
     name: str
+    active: bool = Field(default=True)
 
     def displayName(self):
         return self.name or str(self.user)

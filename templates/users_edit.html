@@ -41,6 +41,7 @@
                     <tr>
                         <th scope="col">User ID</th>
                         <th scope="col">Name</th>
+                        <th scope="col">Active</th>
                         <th scope="col">Can Login?</th>
                         <th scope="col">Admin?</th>
                         <th scope="col" colspan="2">Actions</th>
@@ -52,6 +53,9 @@
                         <th scope="row">{{ user.user }}</th>
                         <td>
                             <input type="text" name="name" class="form-control" value="{{ user.name }}">
+                        </td>
+                        <td>
+                            <input type="checkbox" name="active" class="form-check-input" {% if user.active %}checked{% endif %}>
                         </td>
                         {% if "password" in user %}
                         <td class="text-success"><i class="bi bi-check-circle-fill"></i> True</td>
@@ -81,10 +85,12 @@
             const tr = button.closest("tr");
             const userId = parseInt(tr.dataset["user"]);
             const nameInput = tr.querySelector('input[name="name"]');
+            const activeInput = tr.querySelector('input[name="active"]');
 
             const body = {
                 user: userId,
-                name: nameInput.value
+                name: nameInput.value,
+                active: activeInput.checked
             };
 
             await fetch("/api/users/update", {
