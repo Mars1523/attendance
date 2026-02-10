@@ -6,6 +6,7 @@ import itertools
 from typing import Annotated, Dict, List, Optional
 import typing
 import os
+from urllib.parse import urlencode, urlparse, parse_qs, urlunparse
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -429,7 +430,14 @@ def update_entires(request: Request, update: Annotated[EntryCreate, Form()], ses
     session.commit()
 
     flash(request, f"Created time record for `{user.displayName()}`", "success")
-    return RedirectResponse(request.headers.get("referer"), 303)
+    referer = request.headers.get("referer")
+    parsed = urlparse(referer)
+    params = parse_qs(parsed.query)
+    params["startedAt"] = [update.startedAt.strftime("%Y-%m-%dT%H:%M")]
+    if update.endedAt:
+        params["endedAt"] = [update.endedAt.strftime("%Y-%m-%dT%H:%M")]
+    redirect_url = urlunparse(parsed._replace(query=urlencode(params, doseq=True)))
+    return RedirectResponse(redirect_url, 303)
 
 
 @app.post("/api/entries/delete")

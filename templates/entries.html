@@ -83,11 +83,23 @@
             return local.toJSON().slice(0,19);
         };
 
-        let now = new Date();
-        now.setMilliseconds(0)
-        now.setSeconds(0)
-        document.getElementById('add-start').value = toDateInputValue(now)
-        document.getElementById('add-end').value = toDateInputValue(now)
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('startedAt')) {
+            document.getElementById('add-start').value = params.get('startedAt');
+        } else {
+            let now = new Date();
+            now.setMilliseconds(0);
+            now.setSeconds(0);
+            document.getElementById('add-start').value = toDateInputValue(now);
+        }
+        if (params.has('endedAt')) {
+            document.getElementById('add-end').value = params.get('endedAt');
+        } else {
+            let now = new Date();
+            now.setMilliseconds(0);
+            now.setSeconds(0);
+            document.getElementById('add-end').value = toDateInputValue(now);
+        }
 
         // async function updateUserList() {
         //     let usersReq = await fetch("/api/users")
