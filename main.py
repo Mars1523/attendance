@@ -402,6 +402,7 @@ class EntryCreate(BaseModel):
     userid: int
     startedAt: datetime
     endedAt: Optional[datetime] = None
+    info: Optional[str] = None
 
 
 class UserCreate(BaseModel):
@@ -423,7 +424,7 @@ class UserDelete(BaseModel):
 def update_entires(request: Request, update: Annotated[EntryCreate, Form()], session: SessionDep):
     user = session.exec(select(User).where(User.user == update.userid)).first()
 
-    entry = Attendance(user=update.userid, startedAt=update.startedAt,endedAt=update.endedAt)
+    entry = Attendance(user=update.userid, startedAt=update.startedAt, endedAt=update.endedAt, info=update.info)
     session.add(entry)
     session.commit()
 
