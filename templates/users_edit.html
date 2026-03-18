@@ -16,10 +16,16 @@
         <div class="container">
             {% include 'flashed_messages.frag.html' %}
 
-            <div class="mb-3">
+            <div class="mb-3 d-flex gap-3 align-items-center flex-wrap">
                 <a href="/admin/users/print" target="_blank" class="btn btn-outline-secondary">
                     <i class="bi bi-printer"></i> Print User List
                 </a>
+                <div class="form-check m-0">
+                    <input class="form-check-input" type="checkbox" value="1" id="show-inactive-users">
+                    <label class="form-check-label" for="show-inactive-users">
+                        Show non-active users
+                    </label>
+                </div>
             </div>
 
             <form action="/api/users/create" method="post" class="mb-3 row g-2 align-items-end">
@@ -49,7 +55,7 @@
                 </thead>
                 <tbody>
                     {% for user in users %}
-                    <tr data-user="{{ user.user }}">
+                    <tr data-user="{{ user.user }}" data-active="{{ 'true' if user.active else 'false' }}">
                         <th scope="row">{{ user.user }}</th>
                         <td>
                             <input type="text" name="name" class="form-control" value="{{ user.name }}">
@@ -81,6 +87,26 @@
     </main>
 
     <script>
+        const showInactiveUsersInput = document.getElementById("show-inactive-users");
+
+        function applyUserVisibilityFilter() {
+            const showInactiveUsers = showInactiveUsersInput?.checked ?? false;
+            const userRows = document.querySelectorAll("tbody tr[data-active]");
+
+            for (const row of userRows) {
+                const isActive = row.dataset["active"] === "true";
+                row.hidden = !isActive && !showInactiveUsers;
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (showInactiveUsersInput) {
+                showInactiveUsersInput.addEventListener("change", applyUserVisibilityFilter);
+            }
+
+            applyUserVisibilityFilter();
+        });
+
         async function updateUser(button) {
             const tr = button.closest("tr");
             const userId = parseInt(tr.dataset["user"]);
