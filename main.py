@@ -266,8 +266,15 @@ def users_edit(request: Request, session: SessionDep):
         return user_info | auth_info
     
     users = list(map(merge, rows))
+    existing_user_ids = {user["user"] for user in users}
+    next_user_id = max(
+        (user["user"] for user in users if not (user.get("scopes") and "admin" in user["scopes"])),
+        default=0,
+    ) + 1
+    while next_user_id in existing_user_ids:
+        next_user_id += 1
     return templates.TemplateResponse(
-        request=request, name="users_edit.html", context={"users": users}
+        request=request, name="users_edit.html", context={"users": users, "next_user_id": next_user_id}
     )
 
 @app.get("/admin", response_class=HTMLResponse)

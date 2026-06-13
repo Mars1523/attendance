@@ -31,7 +31,7 @@
             <form action="/api/users/create" method="post" class="mb-3 row g-2 align-items-end">
                 <div class="col-auto">
                     <label for="add-user-id" class="form-label">User ID</label>
-                    <input id="add-user-id" name="user" type="number" class="form-control" required>
+                    <input id="add-user-id" name="user" type="number" class="form-control" value="{{ next_user_id }}" required>
                 </div>
                 <div class="col-auto">
                     <label for="add-user-name" class="form-label">Name</label>
