@@ -807,6 +807,19 @@ def update_user(request: Request, data: UserUpdate, session: SessionDep):
     return PlainTextResponse("ok")
 
 
+@app.post("/api/users/deactivate")
+@requires("admin")
+def deactivate_user(request: Request, data: UserDelete, session: SessionDep):
+    user = session.get(User, data.user)
+    if user is None:
+        return PlainTextResponse("User not found", status_code=404)
+
+    user.active = False
+    session.add(user)
+    session.commit()
+    return PlainTextResponse("ok")
+
+
 @app.post("/api/users/delete")
 @requires("admin")
 def delete_user(request: Request, data: UserDelete, session: SessionDep):

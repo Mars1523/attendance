@@ -77,7 +77,7 @@
                             <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateUser(this)">Save</button>
                         </td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteUser(this)">Delete</button>
+                            <button type="button" class="btn btn-sm btn-outline-warning" onclick="deactivateUser(this)">Deactivate</button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -128,17 +128,17 @@
             location.reload();
         }
 
-        async function deleteUser(button) {
+        async function deactivateUser(button) {
             const tr = button.closest("tr");
             const userId = parseInt(tr.dataset["user"]);
 
-            if (!confirm(`Delete user ${userId}? This cannot be undone.`)) {
+            if (!confirm(`Deactivate user ${userId}?`)) {
                 return;
             }
 
             const body = { user: userId };
 
-            await fetch("/api/users/delete", {
+            await fetch("/api/users/deactivate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
