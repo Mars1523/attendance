@@ -470,6 +470,12 @@ def data(request: Request, session: SessionDep, year: Optional[int] = None):
     
     year_start = datetime(year=year, month=1, day=1)
     year_end = datetime(year=year + 1, month=1, day=1)
+
+    users = session.exec(
+        select(User)
+        .where(User.active == True)
+        .order_by(User.name)
+    ).all()
     
     attendance = session.exec(
         select(Attendance, User)
@@ -533,6 +539,7 @@ def data(request: Request, session: SessionDep, year: Optional[int] = None):
             "tableBody": table,
             "current_year": year,
             "available_years": [int(y) for y in available_years if y],
+            "users": users,
         }
     )
 

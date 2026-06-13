@@ -50,9 +50,16 @@
                     {% endfor %}
                 </nav>
 
-                <form action="/api/entries/create" method="post">
+                <form id="add-entry-form" action="/api/entries/create" method="post">
                     <label>UserID
-                    <input id="add-user" id="add-user" name="userid"/></label>
+                    <input id="add-user-search" list="user-options" autocomplete="off" required>
+                    <input id="add-user" name="userid" type="hidden">
+                    <datalist id="user-options">
+                        {% for user in users %}
+                        <option value="{{ user.displayName() }} (#{{ user.user }})" data-userid="{{ user.user }}"></option>
+                        {% endfor %}
+                    </datalist>
+                    </label>
                     <input id="add-start" name="startedAt" type="datetime-local" value="">
                     <input id="add-end" name="endedAt" type="datetime-local" value="">
                     <input id="add-info" name="info" type="text" placeholder="Info (optional)">
@@ -101,16 +108,34 @@
             document.getElementById('add-end').value = toDateInputValue(now);
         }
 
-        // async function updateUserList() {
-        //     let usersReq = await fetch("/api/users")
-        //     let json = await usersReq.json()
-        //     let usersEl = document.getElementById("users")
-        //     for (let name of json.map(u=>u.name)) {
-        //         // usersEl.appendChild(`<option value="${name}"></option>`)
-        //         usersEl.appendChild(new Option("", name))
-        //     }
-        // }
-        // document.onload = updateUserList
+        const addEntryForm = document.getElementById("add-entry-form");
+        const addUserSearch = document.getElementById("add-user-search");
+        const addUser = document.getElementById("add-user");
+        const userOptions = Array.from(document.querySelectorAll("#user-options option"));
+
+        function syncAddUserId() {
+            const value = addUserSearch.value.trim();
+            const selected = userOptions.find(option => option.value === value);
+            const userIdMatch = userOptions.find(option => option.dataset["userid"] === value);
+
+            if (selected || userIdMatch) {
+                addUser.value = (selected || userIdMatch).dataset["userid"];
+                addUserSearch.setCustomValidity("");
+                return true;
+            }
+
+            addUser.value = "";
+            addUserSearch.setCustomValidity("Choose a user from the list.");
+            return false;
+        }
+
+        addUserSearch.addEventListener("input", syncAddUserId);
+        addEntryForm.addEventListener("submit", (event) => {
+            if (!syncAddUserId()) {
+                event.preventDefault();
+                addUserSearch.reportValidity();
+            }
+        });
 
         async function updateEntry(element) {
             let tr = element.parentElement.parentElement
