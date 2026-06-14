@@ -682,6 +682,7 @@ def time_table(request: Request, session: SessionDep, year: Optional[int] = None
     attendance = session.exec(
         select(Attendance, User)
         .join(User, User.user == Attendance.user)
+        .where(User.active == True)
         .where(Attendance.startedAt >= year_start)
         .where(Attendance.startedAt < year_end)
         .order_by(Attendance.startedAt.desc())
